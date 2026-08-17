@@ -239,11 +239,11 @@ function pageReportsOverview(){
       <div class="chart-wrap">
         <div class="chart-yaxis" style="height:200px;"><span>30</span><span>15</span><span>0</span></div>
         <div class="chart-plot">${multiLineChart([
-          {data:[9,10,11,10,12,13,14,15,17,19,21,24],color:'var(--series-all)',width:2.5},
-          {data:[5,6,6,6,7,7,8,9,10,11,12,13],color:'var(--series-student)'},
-          {data:[3,3,4,3,4,4,4,5,5,6,6,7],color:'var(--series-instructor)'},
-          {data:[1,1,1,2,1,2,2,2,2,3,3,3],color:'var(--series-admin)'},
-        ],1140,200)}</div>
+          {data:[9,10,11,10,12,13,14,15,17,19,21,24],color:'var(--series-all)',width:2.5,name:'All conversations'},
+          {data:[5,6,6,6,7,7,8,9,10,11,12,13],color:'var(--series-student)',name:'Student'},
+          {data:[3,3,4,3,4,4,4,5,5,6,6,7],color:'var(--series-instructor)',name:'Instructor'},
+          {data:[1,1,1,2,1,2,2,2,2,3,3,3],color:'var(--series-admin)',name:'Administrator'},
+        ],1140,200,WEEKS)}</div>
       </div>
       ${xAxis(WEEKS)}
       <div class="chart-legend">
@@ -259,10 +259,10 @@ function pageReportsOverview(){
         <div class="chart-wrap">
           <div class="chart-yaxis" style="height:160px;"><span>20</span><span>10</span><span>0</span></div>
           <div class="chart-plot">${multiLineChart([
-            {data:[4,6,8,10,13,15,17,18],color:'var(--series-student)'},
-            {data:[2,3,3,4,5,5,6,7],color:'var(--series-instructor)'},
-            {data:[1,1,2,2,2,3,3,4],color:'var(--series-admin)'},
-          ],533,160)}</div>
+            {data:[4,6,8,10,13,15,17,18],color:'var(--series-student)',name:'Student'},
+            {data:[2,3,3,4,5,5,6,7],color:'var(--series-instructor)',name:'Instructor'},
+            {data:[1,1,2,2,2,3,3,4],color:'var(--series-admin)',name:'Administrator'},
+          ],533,160,WEEKS.slice(-8))}</div>
         </div>
         <div class="chart-legend">
           <div class="legend-item"><span class="legend-dot" style="background:var(--series-student);"></span>Student</div>
@@ -274,7 +274,7 @@ function pageReportsOverview(){
         <h3>Flagged sessions by week</h3>
         <div class="chart-wrap">
           <div class="chart-yaxis" style="height:160px;"><span>5</span><span>0</span></div>
-          <div class="chart-plot">${barChart([1,0,2,1,1,3,2,1,4,2,3,5],537,160,'var(--bar-idle)',5)}</div>
+          <div class="chart-plot">${barChart([1,0,2,1,1,3,2,1,4,2,3,5],537,160,'var(--bar-idle)',5,'Flagged sessions',WEEKS)}</div>
         </div>
         <p style="font-size:12px;color:var(--muted);margin-top:10px;">12-week trend &middot; red = weeks above threshold (4+)</p>
       </div>
@@ -356,7 +356,7 @@ function pageReportsFlagged(){
       <h3>Flagged sessions by week</h3>
       <div class="chart-wrap">
         <div class="chart-yaxis" style="height:200px;"><span>5</span><span>0</span></div>
-        <div class="chart-plot">${barChart([1,0,2,1,1,3,2,1,4,2,3,5],1138,200,'var(--bar-idle)',5)}</div>
+        <div class="chart-plot">${barChart([1,0,2,1,1,3,2,1,4,2,3,5],1138,200,'var(--bar-idle)',5,'Flagged sessions',WEEKS)}</div>
       </div>
       ${xAxis(WEEKS)}
     </div>
@@ -392,7 +392,7 @@ function pageReportsRoomScan(){
       <h3>Failure rate by week</h3>
       <div class="chart-wrap">
         <div class="chart-yaxis" style="height:220px;"><span>15%</span><span>7.5%</span><span>0%</span></div>
-        <div class="chart-plot">${lineChart([9.4,8.8,9.1,8.2,7.9,8.4,7.6,7.1,7.4,6.9,7.2,6.8],1124,220,'var(--series-all)')}</div>
+        <div class="chart-plot">${lineChart([9.4,8.8,9.1,8.2,7.9,8.4,7.6,7.1,7.4,6.9,7.2,6.8],1124,220,'var(--series-all)',WEEKS,'Failure rate','%')}</div>
       </div>
       ${xAxis(WEEKS)}
     </div>
@@ -432,7 +432,7 @@ function pageReportsAiAssist(){
       <h3>Time to human by week (live attempts)</h3>
       <div class="chart-wrap">
         <div class="chart-yaxis" style="height:220px;"><span>50%</span><span>25%</span><span>0%</span></div>
-        <div class="chart-plot">${lineChart([38,36,34,33,31,30,29,27,26,24,23,22],1120,220,'var(--series-all)')}</div>
+        <div class="chart-plot">${lineChart([38,36,34,33,31,30,29,27,26,24,23,22],1120,220,'var(--series-all)',WEEKS,'Time to human','%')}</div>
       </div>
       ${xAxis(WEEKS)}
     </div>
@@ -643,7 +643,7 @@ function pageInbox(){
           <div class="chat-header-id">
             <strong>Jordan Lee</strong>
             <span class="badge badge-student">Student</span>
-            <span class="icon-btn-square" style="border:1px solid var(--border);">${I('check',14)}</span>
+            <span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>
           </div>
           <div class="chat-actions">
             <button class="icon-btn-square panel-reopen${sidePanelCollapsed?' show':''}" data-panel-toggle
@@ -651,7 +651,7 @@ function pageInbox(){
               aria-expanded="${!sidePanelCollapsed}"
               onclick="toggleSidePanel(event)">${I('panelRightOpen',16)}</button>
             <button class="icon-btn-square">${I('dots',16)}</button>
-            <button class="btn btn-primary btn-deep" style="padding:8px 12px;">${I('x',16)} Close</button>
+            <button class="btn btn-primary btn-deep" style="padding:8px 12px;gap:4px;">${I('x',16)} Close</button>
           </div>
         </div>
         <div class="chat-thread">

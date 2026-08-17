@@ -383,4 +383,86 @@ function showHint(msg){
   hintTimer = setTimeout(()=>toast.classList.remove('show'), 2200);
 }
 
+/* ---------------- chart hover tooltip ---------------- */
+// One shared floating tooltip, positioned from delegated pointer events —
+// works against every re-render of the reports pages without re-wiring.
+function chartTooltipEl(){
+  let el = document.getElementById('chart-tooltip');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'chart-tooltip';
+    el.className = 'chart-tooltip';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function clearChartMarks(){
+  document.querySelectorAll('.chart-crosshair.show, .chart-hover-dot.show').forEach(function(mark){ mark.classList.remove('show'); });
+}
+function hideChartTooltip(){
+  const el = document.getElementById('chart-tooltip');
+  if(el) el.classList.remove('show');
+  clearChartMarks();
+}
+function positionChartTooltip(tip, clientX, clientY){
+  const pad = 14;
+  const rect = tip.getBoundingClientRect();
+  let left = clientX + pad, top = clientY + pad;
+  if(left + rect.width > window.innerWidth - 8) left = clientX - rect.width - pad;
+  if(top + rect.height > window.innerHeight - 8) top = clientY - rect.height - pad;
+  tip.style.left = left+'px';
+  tip.style.top = top+'px';
+}
+function showBarTooltip(bar, e){
+  let data; try{ data = JSON.parse(bar.dataset.tip); } catch(err){ return; }
+  clearChartMarks();
+  const tip = chartTooltipEl();
+  tip.innerHTML = chartTooltipHtml(data);
+  tip.classList.add('show');
+  positionChartTooltip(tip, e.clientX, e.clientY);
+}
+function showLineTooltip(hit, e){
+  const svg = hit.closest('svg.mini-chart');
+  if(!svg) return;
+  let data; try{ data = JSON.parse(hit.dataset.tip); } catch(err){ return; }
+  clearChartMarks();
+  const tip = chartTooltipEl();
+  tip.innerHTML = chartTooltipHtml(data);
+  tip.classList.add('show');
+  positionChartTooltip(tip, e.clientX, e.clientY);
+
+  const cx = hit.getAttribute('data-cx');
+  const cross = svg.querySelector('.chart-crosshair');
+  if(cross){ cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.classList.add('show'); }
+  let cys = []; try{ cys = JSON.parse(hit.getAttribute('data-cy')); } catch(err){}
+  svg.querySelectorAll('.chart-hover-dot').forEach(function(dot){
+    const si = Number(dot.dataset.series);
+    if(cys[si] === undefined) return;
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cys[si]);
+    dot.classList.add('show');
+  });
+}
+function chartTooltipHtml(data){
+  const rows = (data.entries||[]).map(function(en){
+    return '<div class="chart-tip-row"><span class="chart-tip-dot" style="background:'+en.color+'"></span>'
+      + '<span class="chart-tip-name">'+en.name+'</span><span class="chart-tip-value">'+en.value+'</span></div>';
+  }).join('');
+  return (data.label ? '<div class="chart-tip-label">'+data.label+'</div>' : '') + rows;
+}
+function initChartTooltip(){
+  document.addEventListener('mousemove', function(e){
+    const hit = e.target.closest && e.target.closest('.chart-hit');
+    if(hit){ showLineTooltip(hit, e); return; }
+    const bar = e.target.closest && e.target.closest('.chart-bar');
+    if(bar){ showBarTooltip(bar, e); return; }
+    hideChartTooltip();
+  });
+  // mousemove alone won't fire once the pointer leaves the window entirely.
+  document.addEventListener('mouseout', function(e){
+    if(!e.relatedTarget) hideChartTooltip();
+  });
+}
+initChartTooltip();
+
 showPage('inbox');

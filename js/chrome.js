@@ -157,47 +157,90 @@ function settingsNav(active){
 }
 
 /* ---------------- mini chart helpers ---------------- */
-function lineChart(points, w, h, color){
+// Every chart draws itself in on mount (CSS keyframes, see components.css) and
+// carries invisible per-index hit targets so a shared delegated handler in
+// app.js can show a hover tooltip + crosshair — see initChartTooltip().
+function chartHit(x0, cw, h, cx, cyList, i, tip){
+  return `<rect class="chart-hit" x="${x0.toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${h}" fill="transparent"
+    data-cx="${cx}" data-cy='[${cyList.join(',')}]' data-i="${i}" data-tip='${tip.replace(/'/g,'&#39;')}'/>`;
+}
+function lineChart(points, w, h, color, labels, seriesName, unit){
   const step = w/(points.length-1);
   const max = Math.max(...points), min=0;
   const norm = v => h - ((v-min)/(max-min||1))*h;
   const pts = points.map((v,i)=> (i*step).toFixed(1)+','+norm(v).toFixed(1)).join(' ');
   const area = `0,${h} ${pts} ${w},${h}`;
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
+  const name = seriesName || 'Value';
+  let hits = '';
+  for(let i=0;i<points.length;i++){
+    const cx = (i*step).toFixed(1), cy = norm(points[i]).toFixed(1);
+    const tip = JSON.stringify({label:labels&&labels[i], entries:[{color, name, value:points[i]+(unit||'')}]});
+    const x0 = Math.max(0, i*step-step/2);
+    const cw = (i===0||i===points.length-1) ? step/2 : step;
+    hits += chartHit(x0, cw, h, cx, [cy], i, tip);
+  }
+  return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
     <line x1="0" y1="0" x2="${w}" y2="0" stroke="#e8e4e3" stroke-width="1"/>
     <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#e8e4e3" stroke-width="1"/>
     <line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="#e8e4e3" stroke-width="1"/>
-    <polygon points="${area}" fill="${color}" opacity=".12"/>
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5"/>
-    <circle cx="${w}" cy="${norm(points[points.length-1])}" r="4" fill="${color}"/>
+    <polygon class="chart-area" points="${area}" fill="${color}" opacity=".12"/>
+    <polyline class="chart-line" points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" pathLength="100"/>
+    <circle class="chart-dot-ping" cx="${w}" cy="${norm(points[points.length-1])}" r="4" fill="${color}"/>
+    <circle class="chart-dot" cx="${w}" cy="${norm(points[points.length-1])}" r="4" fill="${color}"/>
+    <line class="chart-crosshair" x1="0" y1="0" x2="0" y2="${h}"/>
+    <circle class="chart-hover-dot" data-series="0" r="4" fill="${color}" cx="-10" cy="-10"/>
+    ${hits}
   </svg>`;
 }
-function multiLineChart(series, w, h){
+function multiLineChart(series, w, h, labels){
   const step = w/(series[0].data.length-1);
   const max = Math.max(...series.flatMap(s=>s.data));
   const norm = v => h - (v/(max||1))*h;
-  let out = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
+  let out = `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
     <line x1="0" y1="0" x2="${w}" y2="0" stroke="#e8e4e3" stroke-width="1"/>
     <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#e8e4e3" stroke-width="1"/>
     <line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="#e8e4e3" stroke-width="1"/>`;
-  series.forEach(s=>{
+  series.forEach((s,si)=>{
     const pts = s.data.map((v,i)=> (i*step).toFixed(1)+','+norm(v).toFixed(1)).join(' ');
-    out += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width||2}"/>`;
+    out += `<polyline class="chart-line" points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width||2}" pathLength="100" style="--delay:${(si*0.12).toFixed(2)}s"/>`;
   });
+  // Only the lead series gets the live pulse — restraint over decorating every line.
+  const lead = series[0];
+  const leadCy = norm(lead.data[lead.data.length-1]);
+  out += `<circle class="chart-dot-ping" cx="${w}" cy="${leadCy}" r="3.5" fill="${lead.color}"/>
+    <circle class="chart-dot" cx="${w}" cy="${leadCy}" r="3.5" fill="${lead.color}"/>
+    <line class="chart-crosshair" x1="0" y1="0" x2="0" y2="${h}"/>`;
+  series.forEach((s,si)=>{
+    out += `<circle class="chart-hover-dot" data-series="${si}" r="3.5" fill="${s.color}" cx="-10" cy="-10"/>`;
+  });
+  const n = series[0].data.length;
+  for(let i=0;i<n;i++){
+    const cx = (i*step).toFixed(1);
+    const cys = series.map(s=>norm(s.data[i]).toFixed(1));
+    const entries = series.map(s=>({color:s.color, name:s.name||'Series', value:s.data[i]}));
+    const tip = JSON.stringify({label:labels&&labels[i], entries});
+    const x0 = Math.max(0, i*step-step/2);
+    const cw = (i===0||i===n-1) ? step/2 : step;
+    out += chartHit(x0, cw, h, cx, cys, i, tip);
+  }
   out += `</svg>`;
   return out;
 }
-function barChart(values, w, h, color, max){
+function barChart(values, w, h, color, max, seriesName, labels){
   max = max || Math.max(...values);
   const gap = 10, n = values.length, bw = (w-gap*(n-1))/n;
+  const name = seriesName || 'Value';
   let bars='';
   values.forEach((v,i)=>{
     const bh = (v/max)*h;
     const x = i*(bw+gap);
     const isMax = v===max;
-    bars += `<rect x="${x.toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,2).toFixed(1)}" rx="2" fill="${isMax?'var(--bar-alert)':color}"/>`;
+    const fill = isMax?'var(--bar-alert)':color;
+    const tip = JSON.stringify({label:labels&&labels[i], entries:[{color:fill, name, value:v}]});
+    bars += `<rect class="chart-bar" x="${x.toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,2).toFixed(1)}" rx="2" fill="${fill}"
+      style="--delay:${(i*0.045).toFixed(3)}s" data-tip='${tip.replace(/'/g,'&#39;')}'/>`;
   });
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;">${bars}</svg>`;
+  return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;">${bars}</svg>`;
 }
 const WEEKS = ['May 18','May 25','Jun 1','Jun 8','Jun 15','Jun 22','Jun 29','Jul 6','Jul 13','Jul 20','Jul 27','Aug 3'];
 function xAxis(labels){ return `<div class="chart-xaxis">${labels.map(l=>`<span>${l}</span>`).join('')}</div>`; }
