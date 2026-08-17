@@ -1,0 +1,55 @@
+  :root{
+    /* Surfaces — the redesign sits floating cards on a warm ground rather than
+       dividing the screen with borders. Depth comes from shadow, not rules. */
+    --bg:#efeceb;          /* app ground: sidenav + gutters sit directly on this */
+    --bg-deep:#eae7e6;     /* the ground behind the ground, outside the body */
+    --sidenav-bg:transparent;
+    --card:#ffffff;
+    --card-shadow:0 0 4px rgba(0,0,0,.15);
+    --sel:#dbd3d1;         /* selected chip / received bubble / filter pills */
+    --sel-hover:#e4dedc;
+    --unread:#fdfcfc;      /* unread chat rows read as *lighter* than the ground */
+    --border:#e8e4e3;
+    --border-soft:rgba(124,109,103,.4);
+    --text:#0c0a09;
+    --muted:#7c6d67;
+    --muted2:#575658;
+    --muted3:#403e3f;
+    --readonly:#778ba6;
+    --red:#c70036;         /* primary actions: New content, Edit, New contact */
+    --red-deep:#b20030;    /* inbox Close + live-attempt badge only */
+    --red-dot:#c70036;
+    --surface-nested:#f8f7f6; /* stat tiles + chart wells inside a white card */
+    --pill:#f3f1f1;        /* filter / search pills */
+    --pink-hi:#ffe6ec;     /* highlighted stat tile */
+    /* Series palette — the lead series is now near-black, not red, so red is
+       free to mean "above threshold" wherever it appears in a chart. */
+    --series-all:#0c0a09;
+    --series-student:#2a78d6;
+    --series-instructor:#eb6834;
+    --series-admin:#1baf7a;
+    --bar-idle:#c5cad4;
+    --bar-alert:#e7000b;
+    --sent-bubble:#f0dfdb; /* agent's own messages: warm, not saturated green */
+    --send-btn:#403e3f;
+    --red-text:#e7000b;
+    --red-bg:#fdebeb;
+    --amber:#b45309;
+    --amber-bg:#fff1f2;
+    --amber-badge-bg:#feeeaf;
+    --amber-badge-text:#d97706;
+    --green:#047857;
+    --green-text:#056b3d;
+    --green-bg:#e8faf0;
+    --green-bg2:#d3ebe3;
+    --green-bg3:#bfeacb;
+    --green-bg4:#c9edd4;
+    --purple-bg:#e9d6f9;
+    --pink-bg:#f8dae5;
+    --orange-text:#cd4c15;
+    --orange-badge-text:#b94513;
+    --orange-bg:#fae0d1;
+    --blue-bg:#dbeafe;
+    --blue-text:#1d4ed8;
+    --brand-link:#5252b5;
+  }
