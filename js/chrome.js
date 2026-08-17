@@ -20,8 +20,10 @@ function avatar(key, size){
   return '<div class="avatar-circle" style="width:'+size+'px;height:'+size+'px;background:'+p.bg+';color:'+p.color+';font-size:'+(size*0.38)+'px">'+p.initials+'</div>';
 }
 function roleAvatar(role, replied){
-  const cls = replied ? 'role-admin' : 'role-'+role;
-  return '<div class="role-avatar '+cls+'">'+Ifill('messageCircle',16)+'</div>';
+  // Replying doesn't recolor the avatar — it stays the sender's role colour;
+  // only the glyph swaps to the reply arrow, per the Figma inbox spec.
+  const icon = replied ? I('reply',16) : Ifill('messageCircle',16);
+  return '<div class="role-avatar role-'+role+'">'+icon+'</div>';
 }
 function roleBadge(role){
   if(role==='admin') return '<span class="badge badge-admin">Administrator</span>';

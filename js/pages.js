@@ -617,18 +617,23 @@ function pageInbox(){
         </div>
       </div>
       <div class="convo-filters">
-        <span class="filter-tab">3 Open</span>
+        <span class="filter-tab">13 Open</span>
         <span class="filter-tab">Last activity ${I('listFilter',12)}</span>
       </div>
       <div class="convo-scroll">
-        ${inboxChatItem('student','Student','6 min left','The lockdown browser closed mid-exam',{live:true,unread:true})}
-        ${inboxChatItem('unknown','Unknown','18 min left',"Hi, I can't access my exam page",{live:true,unread:true})}
-        ${inboxChatItem('student','Student','2m ago','I keep getting a black screen after The proctoring loads',{selected:true})}
-        ${inboxChatItem('admin','Administrator','6m ago','Thanks, that should resolve it &mdash; let me know',{replied:true})}
+        ${inboxChatItem('student','Student','&mdash;','I keep getting a black screen after The proctoring loads',{live:true,unread:true})}
+        ${inboxChatItem('unknown','Unknown','&mdash;',"Hi, I can't access my exam page",{live:true,unread:true})}
+        ${inboxChatItem('student','Student','2m ago','The lockdown browser closed mid-exam. What do I do?',{replied:true})}
         ${inboxChatItem('student','Student','4m ago','My camera permission keeps getting denied',{})}
-        ${inboxChatItem('student','Student','3m ago','The proctoring extension says it needs an update',{unread:true})}
-        ${inboxChatItem('admin','Administrator','7m ago','Is there a way to reschedule my exam time',{unread:true})}
+        ${inboxChatItem('admin','Administrator','7m ago','Is there a way to reschedule my exam time',{selected:true})}
+        ${inboxChatItem('student','Student','3m ago','The proctoring extension says it needs an update',{replied:true})}
+        ${inboxChatItem('student','Student','6 min left','The lockdown browser closed mid-exam',{replied:true})}
+        ${inboxChatItem('unknown','Unknown','8 min ago',"Hi, I can't access my exam page",{replied:true})}
+        ${inboxChatItem('admin','Administrator','6m ago','Thanks, that should resolve it &mdash; let me know',{replied:true})}
+        ${inboxChatItem('student','Student','2m ago','I keep getting a black screen after The proctoring loads',{replied:true})}
+        ${inboxChatItem('student','Student','2m ago','Screen recording permission keeps resetting',{replied:true})}
         ${inboxChatItem('unknown','Unknown','9m ago','My screen share stopped working mid-exam',{})}
+        ${inboxChatItem('student','Student','2m ago',"Extension update loop won't finish installing",{replied:true})}
         ${inboxChatItem('unknown','Unknown','18m ago','Do I need two monitors disconnected?',{})}
       </div>
     </div>
