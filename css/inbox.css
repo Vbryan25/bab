@@ -17,11 +17,21 @@
   .convo-filters{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;}
   /* Filter pills are now filled chips rather than hairline outlines. */
   .filter-tab{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;color:var(--text);
-    background:var(--sel);border:none;display:flex;align-items:center;gap:6px;cursor:default;}
+    background:var(--sel);border:none;display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .filter-tab:hover{background:var(--sel-hover);}
   .convo-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;
     border-radius:0;overflow-x:hidden;border-top:1px solid var(--border);}
+  /* A thin, muted scrollbar instead of the default OS chrome — present, but
+     soft enough not to compete with the rest of the chrome-free surface. */
+  .convo-scroll,.chat-thread,.side-panel{scrollbar-width:thin;scrollbar-color:var(--border-soft) transparent;}
+  .convo-scroll::-webkit-scrollbar,.chat-thread::-webkit-scrollbar,.side-panel::-webkit-scrollbar{width:6px;}
+  .convo-scroll::-webkit-scrollbar-track,.chat-thread::-webkit-scrollbar-track,.side-panel::-webkit-scrollbar-track{background:transparent;}
+  .convo-scroll::-webkit-scrollbar-thumb,.chat-thread::-webkit-scrollbar-thumb,.side-panel::-webkit-scrollbar-thumb{
+    background:var(--border-soft);border-radius:999px;}
+  .convo-scroll::-webkit-scrollbar-thumb:hover,.chat-thread::-webkit-scrollbar-thumb:hover,.side-panel::-webkit-scrollbar-thumb:hover{
+    background:var(--muted);}
   .convo-section{padding:16px 10px 12px;}
-  .convo-section.bordered{border-bottom:1px solid var(--border);}
+  .convo-section.bordered{border-bottom:.5px solid var(--border);}
   .convo-section-header{display:flex;align-items:center;gap:8px;padding:0 0 8px 8px;font-size:12px;font-weight:600;
     letter-spacing:.03em;text-transform:uppercase;color:var(--muted);}
   .live-attempts-label{display:flex;align-items:center;gap:8px;padding:0 7px 8px;font-size:12px;font-weight:600;
@@ -33,12 +43,24 @@
   /* Read rows sit a step darker than the ground, not flush with it; unread rows
      lift *lighter* than the ground, and the selected row is its own warm-grey
      mass, distinct from --sel used elsewhere (filter pills, received bubbles). */
-  .chat-item{display:flex;gap:12px;padding:8px 16px;cursor:default;align-items:center;
-    height:60px;flex:0 0 auto;background:var(--chat-read);border-bottom:1px solid var(--border);}
+  .chat-item{display:flex;gap:12px;padding:8px 16px;cursor:pointer;align-items:center;
+    height:60px;flex:0 0 auto;background:var(--chat-read);border-bottom:1px solid var(--border);
+    transition:background .1s ease;}
+  .chat-item:hover{background:var(--chat-read-hover);}
+  .chat-item:active{filter:brightness(.97);}
+  /* No default browser ring on a div-as-button — a red inset outline instead,
+     kept off the bottom hairline so it doesn't read as a doubled border. */
+  .chat-item:focus-visible{outline:2px solid var(--red);outline-offset:-2px;}
   .chat-item.unread{background:var(--unread);}
+  .chat-item.unread:hover{background:var(--unread-hover);}
   .chat-item.unread .chat-item-name{font-weight:600;}
   .chat-item.unread .chat-item-preview p{color:var(--muted3);font-weight:500;}
-  .chat-item.selected{background:var(--chat-selected);}
+  .chat-item.selected{background:var(--chat-selected);cursor:default;}
+  .chat-item.selected:hover{background:var(--chat-selected);}
+  /* Preview text goes full-strength on hover/selected — same "active" idiom
+     as the role-avatar icon reaching full opacity on .selected. */
+  .chat-item:hover .chat-item-preview p{color:var(--text);}
+  .chat-item.selected .chat-item-preview p{color:var(--text);}
   .live-badge{background:var(--red-deep);color:#fff;font-size:12px;line-height:18px;padding:0 5px;
     border-radius:4px;white-space:nowrap;flex:0 0 auto;}
   .role-avatar{width:32px;height:32px;border-radius:999px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
@@ -62,7 +84,7 @@
   .chat-window-wrap{flex:1;min-width:0;background:transparent;padding:16px 16px 16px 8px;display:flex;gap:8px;overflow:hidden;}
   .chat-window{flex:1;min-width:0;background:#fff;border-radius:16px;box-shadow:var(--card-shadow);
     display:flex;flex-direction:column;position:relative;overflow:hidden;}
-  .chat-header{border-bottom:.5px solid var(--border-soft);padding:16px;display:flex;align-items:center;justify-content:space-between;}
+  .chat-header{border-bottom:.5px solid var(--border-rail);padding:16px;display:flex;align-items:center;justify-content:space-between;}
   .chat-header-id{display:flex;align-items:center;gap:12px;}
   .chat-header-id strong{font-size:16px;font-weight:600;letter-spacing:-.02em;}
   .chat-actions{display:flex;align-items:center;gap:8px;}
@@ -145,6 +167,32 @@
   .command-trigger-key{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;
     font-size:12px;color:var(--muted);white-space:nowrap;}
   .command-divider{height:1px;background:var(--border);margin:4px 6px;}
+
+  /* chat header "more" menu — a floating corner popover like the composer
+     flyouts above, anchored to the dots button rather than a column edge. */
+  .chat-more-wrap{position:relative;}
+  .chat-more-menu{position:absolute;top:34px;right:0;width:208px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
+  .chat-more-menu.open{display:block;}
+  .chat-more-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-radius:8px;font-size:14px;
+    color:var(--text);cursor:pointer;border:none;background:none;text-align:left;font-family:inherit;}
+  .chat-more-item:hover{background:var(--bg);}
+  .chat-more-item .icon{width:15px;height:15px;color:var(--muted);flex:0 0 auto;}
+  .chat-more-divider{height:1px;background:var(--border);margin:4px 6px;}
+
+  /* status filter / sort dropdowns — same flyout shell as .chat-more-menu */
+  .filter-tab-wrap{position:relative;}
+  .filter-menu,.sort-menu{position:absolute;top:32px;width:200px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
+  .filter-menu{left:0;}
+  .sort-menu{right:0;}
+  .filter-menu.open,.sort-menu.open{display:block;}
+  .menu-check-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-radius:8px;font-size:14px;
+    color:var(--text);cursor:pointer;border:none;background:none;text-align:left;font-family:inherit;}
+  .menu-check-item:hover{background:var(--bg);}
+  .menu-check-item .icon{width:15px;height:15px;color:var(--muted);flex:0 0 auto;}
+  .menu-check-item .check{margin-left:auto;width:14px;height:14px;color:var(--text);visibility:hidden;flex:0 0 auto;}
+  .menu-check-item.active .check{visibility:visible;}
 
   .side-panel{width:320px;flex:0 0 320px;background:#fff;border:none;border-radius:16px;box-shadow:var(--card-shadow);
     display:flex;flex-direction:column;overflow-y:auto;

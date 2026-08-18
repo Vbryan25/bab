@@ -574,7 +574,8 @@ function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
   const right = opts.live
     ? `<span class="live-badge">In-attempt</span>`
     : `<span class="chat-item-time">${timeLabel}</span>`;
-  return `<div class="chat-item${state}">
+  return `<div class="chat-item${state}" role="button" tabindex="0" aria-current="${opts.selected?'true':'false'}"
+    onclick="selectChatItem(event,this)" onkeydown="onChatItemKeydown(event)">
     ${roleAvatar(role, opts.replied)}
     <div class="chat-item-body">
       <div class="chat-item-top">
@@ -617,8 +618,26 @@ function pageInbox(){
         </div>
       </div>
       <div class="convo-filters">
-        <span class="filter-tab">13 Open</span>
-        <span class="filter-tab">Last activity ${I('listFilter',12)}</span>
+        <div class="filter-tab-wrap">
+          <button class="filter-tab" data-role="filter" onclick="toggleFilterMenu(event)">
+            <span class="filter-tab-label">${FILTER_LABELS[inboxStatusFilter]}</span>${I('chevronDown',12)}
+          </button>
+          <div id="filter-menu" class="filter-menu">
+            <button class="menu-check-item${inboxStatusFilter==='open'?' active':''}" onclick="selectFilter(event,'open')">${I('inbox',15)}Open<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxStatusFilter==='closed'?' active':''}" onclick="selectFilter(event,'closed')">${I('x',15)}Closed<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxStatusFilter==='all'?' active':''}" onclick="selectFilter(event,'all')">${I('inbox',15)}Open &amp; Closed<span class="check">${I('check',14)}</span></button>
+          </div>
+        </div>
+        <div class="filter-tab-wrap">
+          <button class="filter-tab" data-role="sort" onclick="toggleSortMenu(event)">
+            <span class="filter-tab-label">${SORT_LABELS[inboxSortBy]}</span>${I('listFilter',12)}
+          </button>
+          <div id="sort-menu" class="sort-menu">
+            <button class="menu-check-item${inboxSortBy==='last-activity'?' active':''}" onclick="selectSort(event,'last-activity')">${I('clock',15)}Last activity<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxSortBy==='date-started'?' active':''}" onclick="selectSort(event,'date-started')">${I('calClock',15)}Date started<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxSortBy==='waiting-since'?' active':''}" onclick="selectSort(event,'waiting-since')">${I('hourglass',15)}Waiting since<span class="check">${I('check',14)}</span></button>
+          </div>
+        </div>
       </div>
       <div class="convo-scroll">
         ${inboxChatItem('student','Student','&mdash;','I keep getting a black screen after The proctoring loads',{live:true,unread:true})}
@@ -650,7 +669,16 @@ function pageInbox(){
               aria-label="Show context panel" title="Show context panel"
               aria-expanded="${!sidePanelCollapsed}"
               onclick="toggleSidePanel(event)">${I('panelRightOpen',16)}</button>
-            <button class="icon-btn-square">${I('dots',16)}</button>
+            <div class="chat-more-wrap">
+              <button class="icon-btn-square" onclick="toggleChatMoreMenu(event)" aria-haspopup="true" aria-expanded="false" title="More">${I('dots',16)}</button>
+              <div id="chat-more-menu" class="chat-more-menu">
+                <button class="chat-more-item" onclick="chatMoreAction(event,'screenshare')">${I('monitor',15)}Screen share</button>
+                <button class="chat-more-item" onclick="chatMoreAction(event,'transfer')">${I('reply',15)}Transfer conversation</button>
+                <button class="chat-more-item" onclick="chatMoreAction(event,'assign')">${I('userCheck',15)}Assign to teammate</button>
+                <div class="chat-more-divider"></div>
+                <button class="chat-more-item" onclick="chatMoreAction(event,'spam')">${I('alertCircle',15)}Mark as spam</button>
+              </div>
+            </div>
             <button class="btn btn-primary btn-deep" style="padding:8px 12px;gap:4px;">${I('x',16)} Close</button>
           </div>
         </div>

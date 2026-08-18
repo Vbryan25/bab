@@ -98,3 +98,10 @@ function Ilms(name, size){
 /* Inbox context panel: collapsed state is module-level so it survives renderShell() */
 let sidePanelCollapsed = false;
 
+/* Inbox filter/sort selection: module-level so it survives renderShell() and
+   so the tab label + popover checkmark read from one source of truth. */
+const FILTER_LABELS = {open:'13 Open', closed:'4 Closed', all:'17 Open & Closed'};
+const SORT_LABELS = {'last-activity':'Last activity', 'date-started':'Date started', 'waiting-since':'Waiting since'};
+let inboxStatusFilter = 'open';
+let inboxSortBy = 'last-activity';
+

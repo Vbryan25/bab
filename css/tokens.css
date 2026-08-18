@@ -9,10 +9,14 @@
     --sel:#dbd3d1;         /* selected chip / received bubble / filter pills */
     --sel-hover:#e4dedc;
     --unread:#fdfcfc;      /* unread chat rows read as *lighter* than the ground */
+    --unread-hover:#f4f0ef;
     --chat-read:#e6e1e0;   /* default/read chat rows — a step darker than the ground, not flush with it */
+    --chat-read-hover:#dcd6d4;
     --chat-selected:#d2c8c6; /* selected chat row — its own warm-grey, distinct from --sel elsewhere */
+    --chat-selected-hover:#c7bab7;
     --border:#e8e4e3;
     --border-soft:rgba(124,109,103,.4);
+    --border-rail:rgba(124,109,103,.18); /* column hairlines — lighter than --border-soft */
     --text:#0c0a09;
     --muted:#7c6d67;
     --muted2:#575658;

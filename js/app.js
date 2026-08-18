@@ -61,10 +61,38 @@ document.addEventListener('click', function(e){
     closeEmojiMenu();
     closeAiMenu();
   }
+  // click-away closes the chat header "more" menu
+  const moreMenu = document.getElementById('chat-more-menu');
+  if(moreMenu && moreMenu.classList.contains('open')){
+    const withinMore = e.target.closest('#chat-more-menu');
+    const isMoreToggle = e.target.closest('.chat-more-wrap > .icon-btn-square');
+    if(!withinMore && !isMoreToggle) moreMenu.classList.remove('open');
+  }
+  // click-away closes the status filter / sort dropdowns
+  const filterMenu = document.getElementById('filter-menu');
+  if(filterMenu && filterMenu.classList.contains('open')){
+    const within = e.target.closest('#filter-menu');
+    const isToggle = e.target.closest('[data-role="filter"]');
+    if(!within && !isToggle) filterMenu.classList.remove('open');
+  }
+  const sortMenu = document.getElementById('sort-menu');
+  if(sortMenu && sortMenu.classList.contains('open')){
+    const within = e.target.closest('#sort-menu');
+    const isToggle = e.target.closest('[data-role="sort"]');
+    if(!within && !isToggle) sortMenu.classList.remove('open');
+  }
 });
 
+// These four popovers all live in the header/list area (as opposed to the
+// composer flyouts, which are spatially separate) — each one's toggle closes
+// the other three, since stopPropagation() below means the document-level
+// click-away listener never runs for these clicks, only for genuine
+// click-aways.
+function closeViews(){ const p = document.getElementById('views-popover'); if(p) p.classList.remove('open'); }
+function closeChatMoreMenu(){ const m = document.getElementById('chat-more-menu'); if(m) m.classList.remove('open'); }
 function toggleViews(e){
   e.stopPropagation();
+  closeChatMoreMenu(); closeFilterMenu(); closeSortMenu();
   const popover = document.getElementById('views-popover');
   if(popover) popover.classList.toggle('open');
 }
@@ -74,6 +102,60 @@ function selectView(e, key){
   e.currentTarget.classList.add('active');
   document.getElementById('views-popover').classList.remove('open');
   showHint(key==='your-inbox' ? 'Showing Your Inbox' : 'This is a prototype — only Your Inbox has live data');
+}
+function toggleChatMoreMenu(e){
+  e.stopPropagation();
+  closeViews(); closeFilterMenu(); closeSortMenu();
+  const menu = document.getElementById('chat-more-menu');
+  if(!menu) return;
+  const open = menu.classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+}
+function chatMoreAction(e, key){
+  e.stopPropagation();
+  document.getElementById('chat-more-menu').classList.remove('open');
+  const labels = {screenshare:'Screen share',transfer:'Transfer conversation',assign:'Assign to teammate',spam:'Mark as spam'};
+  showHint('This is a prototype — ' + (labels[key]||'this action') + ' isn’t wired up yet');
+}
+function toggleFilterMenu(e){ e.stopPropagation(); closeSortMenu(); closeViews(); closeChatMoreMenu(); document.getElementById('filter-menu').classList.toggle('open'); }
+function toggleSortMenu(e){ e.stopPropagation(); closeFilterMenu(); closeViews(); closeChatMoreMenu(); document.getElementById('sort-menu').classList.toggle('open'); }
+function closeFilterMenu(){ const m=document.getElementById('filter-menu'); if(m) m.classList.remove('open'); }
+function closeSortMenu(){ const m=document.getElementById('sort-menu'); if(m) m.classList.remove('open'); }
+function selectFilter(e, key){
+  e.stopPropagation();
+  inboxStatusFilter = key;
+  document.querySelector('[data-role="filter"] .filter-tab-label').textContent = FILTER_LABELS[key];
+  document.querySelectorAll('#filter-menu .menu-check-item').forEach(function(el,i){ el.classList.toggle('active', ['open','closed','all'][i]===key); });
+  closeFilterMenu();
+  showHint('This is a prototype — filtering isn’t wired up yet');
+}
+function selectSort(e, key){
+  e.stopPropagation();
+  inboxSortBy = key;
+  document.querySelector('[data-role="sort"] .filter-tab-label').textContent = SORT_LABELS[key];
+  document.querySelectorAll('#sort-menu .menu-check-item').forEach(function(el,i){ el.classList.toggle('active', ['last-activity','date-started','waiting-since'][i]===key); });
+  closeSortMenu();
+  showHint('This is a prototype — sorting isn’t wired up yet');
+}
+// Selecting a row marks it read and moves the selected state — the open
+// thread itself doesn't change, since only Jordan Lee's conversation has
+// live data in this prototype.
+function selectChatItem(e, row){
+  if(row.classList.contains('selected')) return;
+  document.querySelectorAll('.chat-item.selected').forEach(function(el){
+    el.classList.remove('selected');
+    el.setAttribute('aria-current','false');
+  });
+  row.classList.remove('unread');
+  row.classList.add('selected');
+  row.setAttribute('aria-current','true');
+  showHint('This is a prototype — only Jordan Lee’s conversation has live data');
+}
+function onChatItemKeydown(e){
+  if(e.key === 'Enter' || e.key === ' '){
+    e.preventDefault();
+    e.currentTarget.click();
+  }
 }
 function toggleAccordion(e, id){
   e.stopPropagation();
