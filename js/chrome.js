@@ -93,10 +93,10 @@ function reportsNav(active){
     <div class="nav-divider"></div>
     <ul class="nav-list">
       <li class="nav-folder">${I('folder',18)}<span>AI &amp; Automation</span></li>
-      <li>${item('reports-ai-assist','AI Assist','bar').replace('nav-item clickable','nav-child clickable').replace('class="nav-item clickable','class="nav-child clickable')}</li>
+      <li><button class="nav-child clickable${active==='reports-ai-assist'?' active':''}" data-page="reports-ai-assist">AI Assist</button></li>
       <li class="nav-folder">${I('folder',18)}<span>Proctoring</span></li>
-      <li>${item('reports-flagged-sessions','Flagged Sessions','bar').replace(/nav-item/g,'nav-child')}</li>
-      <li>${item('reports-room-scan','Room Scan Failures','bar').replace(/nav-item/g,'nav-child')}</li>
+      <li><button class="nav-child clickable${active==='reports-flagged-sessions'?' active':''}" data-page="reports-flagged-sessions">Flagged Sessions</button></li>
+      <li><button class="nav-child clickable${active==='reports-room-scan'?' active':''}" data-page="reports-room-scan">Room Scan Failures</button></li>
     </ul>
   </div>`;
 }

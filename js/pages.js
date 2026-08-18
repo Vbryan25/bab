@@ -595,7 +595,12 @@ function pageInbox(){
           <button class="convo-header-btn" onclick="toggleViews(event)" title="Views">${I('menu',18)}</button>
           <h2>Chats</h2>
         </div>
-        <button class="convo-header-btn round" title="Search">${I('search',16)}</button>
+        <div class="convo-search-wrap" id="convo-search-wrap">
+          <div class="convo-search-form">
+            <input id="convo-search-input" class="convo-search-input" type="text" placeholder="Search conversations" onkeydown="onConvoSearchKeydown(event)">
+          </div>
+          <button class="convo-header-btn round" onclick="toggleConvoSearch(event)" title="Search" aria-label="Search" aria-expanded="false">${I('search',16)}</button>
+        </div>
       </div>
       <div id="views-popover" class="views-popover">
         <div class="views-popover-header">Inbox</div>
@@ -661,8 +666,10 @@ function pageInbox(){
         <div class="chat-header">
           <div class="chat-header-id">
             <strong>Jordan Lee</strong>
-            <span class="badge badge-student">Student</span>
-            <span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>
+            <div class="chat-header-badges">
+              <span class="badge badge-student">Student</span>
+              <span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>
+            </div>
           </div>
           <div class="chat-actions">
             <button class="icon-btn-square panel-reopen${sidePanelCollapsed?' show':''}" data-panel-toggle
@@ -753,13 +760,35 @@ function pageInbox(){
           <div class="field-row"><span>Institution</span><strong>Cascade State University</strong></div>
         </div>
         <div class="accordion-header" onclick="toggleAccordion(event,'acc-userdata')"><span class="left">${I('user',16)}User Data</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-userdata"><div class="accordion-row"><span>No additional details in this prototype.</span></div></div>
+        <div class="accordion-body" id="acc-userdata">
+          <div class="accordion-row"><strong>Email</strong><span>jordan.lee@cascadestate.edu</span></div>
+          <div class="accordion-row"><strong>Enrollment Status</strong><span>Active &mdash; Fall 2026</span></div>
+          <div class="accordion-row"><strong>Accommodations</strong><span>None on file</span></div>
+          <div class="accordion-row"><strong>Time Zone</strong><span>Pacific Time (UTC-7)</span></div>
+        </div>
         <div class="accordion-header" onclick="toggleAccordion(event,'acc-hardware')"><span class="left">${I('cpu',16)}Hardware &amp; System</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-hardware"><div class="accordion-row"><span>No additional details in this prototype.</span></div></div>
+        <div class="accordion-body" id="acc-hardware">
+          <div class="accordion-row"><strong>Operating System</strong><span>Windows 11 Home</span></div>
+          <div class="accordion-row"><strong>Browser</strong><span>Chrome 128.0.6613</span></div>
+          <div class="accordion-row"><strong>Lockdown Browser Version</strong><span>2.1.4 &mdash; up to date</span></div>
+          <div class="accordion-row"><strong>Webcam</strong><span>Logitech C920 &mdash; Connected</span></div>
+          <div class="accordion-row"><strong>Microphone</strong><span>Built-in &mdash; Connected</span></div>
+          <div class="accordion-row"><strong>Displays Detected</strong><span>1 monitor</span></div>
+        </div>
         <div class="accordion-header" onclick="toggleAccordion(event,'acc-extensions')"><span class="left">${I('puzzle',16)}Extensions</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-extensions"><div class="accordion-row"><span>No additional details in this prototype.</span></div></div>
+        <div class="accordion-body" id="acc-extensions">
+          <div class="accordion-row"><strong>Grammarly</strong><span>Disabled during exam</span></div>
+          <div class="accordion-row"><strong>1Password</strong><span>Disabled during exam</span></div>
+          <div class="accordion-row"><strong>Honey</strong><span>Not detected running</span></div>
+        </div>
         <div class="accordion-header" onclick="toggleAccordion(event,'acc-examsettings')"><span class="left">${I('settings2',16)}Exam Settings</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-examsettings"><div class="accordion-row"><span>No additional details in this prototype.</span></div></div>
+        <div class="accordion-body" id="acc-examsettings">
+          <div class="accordion-row"><strong>Time Limit</strong><span>90 minutes</span></div>
+          <div class="accordion-row"><strong>Attempts Allowed</strong><span>1</span></div>
+          <div class="accordion-row"><strong>Webcam Required</strong><span>Yes</span></div>
+          <div class="accordion-row"><strong>Allowed Materials</strong><span>None &mdash; closed book</span></div>
+          <div class="accordion-row"><strong>Extra Time Granted</strong><span>None</span></div>
+        </div>
         <div class="accordion-header open" onclick="toggleAccordion(event,'acc-environment')"><span class="left">${I('appWindow',16)}Environment</span><span class="chev">${I('chevronRight',16)}</span></div>
         <div class="accordion-body open" id="acc-environment">
           <div class="accordion-row"><strong>Canvas &mdash; BIO 201 Exam</strong><span>chat.theproctoring.com</span></div>

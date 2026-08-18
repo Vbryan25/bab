@@ -10,14 +10,26 @@
   .convo-header-btn{display:flex;align-items:center;justify-content:center;background:none;border:none;
     color:var(--text);cursor:pointer;padding:4px;border-radius:6px;}
   .convo-header-btn:hover{background:var(--sel);}
-  .convo-header-btn.round{width:32px;height:32px;border-radius:999px;padding:0;}
+  .convo-header-btn.round{width:32px;height:32px;border-radius:999px;padding:0;position:relative;z-index:1;}
   .convo-header-btn .icon{width:16px;height:16px;}
+  /* Search expands leftward from the round button, overlaying the "Chats"
+     title rather than pushing it — the button stays put as the close target. */
+  .convo-search-wrap{position:relative;width:32px;height:32px;flex:0 0 auto;}
+  .convo-search-form{position:absolute;top:0;right:0;height:32px;width:32px;border-radius:999px;
+    background:#fff;border:1px solid var(--border);overflow:hidden;opacity:0;pointer-events:none;
+    transition:width .2s cubic-bezier(.4,0,.2,1),opacity .15s ease;}
+  .convo-search-wrap.open .convo-search-form{width:236px;opacity:1;pointer-events:auto;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .convo-search-input{width:100%;height:100%;border:none;background:none;outline:none;font-size:13px;
+    color:var(--text);padding:0 38px 0 14px;font-family:inherit;}
+  .convo-search-input::placeholder{color:var(--muted);}
+  @media (prefers-reduced-motion:reduce){.convo-search-form{transition:none;}}
   .icon-btn-plain{width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;
     background:none;border:none;color:var(--text);cursor:default;}
   .convo-filters{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;}
   /* Filter pills are now filled chips rather than hairline outlines. */
-  .filter-tab{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;color:var(--text);
-    background:var(--sel);border:none;display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .filter-tab{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:500;color:var(--text);
+    background:#fff;border:none;display:flex;align-items:center;gap:6px;cursor:pointer;}
   .filter-tab:hover{background:var(--sel-hover);}
   .convo-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;
     border-radius:0;overflow-x:hidden;border-top:1px solid var(--border);}
@@ -87,10 +99,14 @@
   .chat-header{border-bottom:.5px solid var(--border-rail);padding:16px;display:flex;align-items:center;justify-content:space-between;}
   .chat-header-id{display:flex;align-items:center;gap:12px;}
   .chat-header-id strong{font-size:16px;font-weight:600;letter-spacing:-.02em;}
+  .chat-header-badges{display:flex;align-items:center;gap:6px;}
   .chat-actions{display:flex;align-items:center;gap:8px;}
   .icon-btn-square{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;
     color:var(--text);cursor:default;border:none;background:none;}
   .icon-btn-square:hover{background:var(--bg);}
+  /* The LMS badge isn't a button — it's just a status indicator, so it
+     shouldn't hint at being clickable like the dots/panel-toggle buttons do. */
+  .chat-header-id .icon-btn-square:hover{background:none;}
   .chat-thread{flex:1;background:#fff;padding:16px 16px 0;display:flex;flex-direction:column;gap:24px;align-items:center;
     overflow-y:auto;}
   .system-msg{padding:4px 8px;border-radius:18px;font-size:12px;color:var(--muted2);}
@@ -108,9 +124,14 @@
   .bubble.mine{border-radius:10px 10px 0 10px;background:var(--sent-bubble);color:var(--text);}
   .msg-time{font-size:12px;color:var(--muted2);}
   .composer-wrap{padding:17px 16px 16px;position:relative;}
-  /* The composer is a recessed well on the card rather than an outlined box. */
-  .composer{background:var(--bg);border:none;border-radius:10px;padding:14px 8px 8px 14px;
-    display:flex;flex-direction:column;gap:16px;}
+  /* The composer is a recessed well on the card rather than an outlined box —
+     but while it's actively being typed in, it lifts to white with a border,
+     so "composing" reads as a distinct state, not just an idle placeholder.
+     Border is transparent at rest (not none) so it doesn't shift the box
+     when it appears. */
+  .composer{background:var(--bg);border:.5px solid transparent;border-radius:10px;padding:13.5px 7.5px 7.5px 13.5px;
+    display:flex;flex-direction:column;gap:16px;transition:background .12s ease,border-color .12s ease;}
+  .composer:focus-within{background:#fff;border-color:var(--muted3);}
   .composer-input{font-size:16px;color:var(--text);outline:none;white-space:pre-wrap;word-break:break-word;
     min-height:24px;max-height:120px;overflow-y:auto;cursor:text;}
   .composer-input:empty:before{content:attr(data-placeholder);color:var(--muted);}
@@ -172,9 +193,9 @@
      flyouts above, anchored to the dots button rather than a column edge. */
   .chat-more-wrap{position:relative;}
   .chat-more-menu{position:absolute;top:34px;right:0;width:208px;background:#fff;border:1px solid var(--border);
-    border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
+    border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
   .chat-more-menu.open{display:block;}
-  .chat-more-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-radius:8px;font-size:14px;
+  .chat-more-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border-radius:6px;font-size:14px;
     color:var(--text);cursor:pointer;border:none;background:none;text-align:left;font-family:inherit;}
   .chat-more-item:hover{background:var(--bg);}
   .chat-more-item .icon{width:15px;height:15px;color:var(--muted);flex:0 0 auto;}
@@ -183,11 +204,11 @@
   /* status filter / sort dropdowns — same flyout shell as .chat-more-menu */
   .filter-tab-wrap{position:relative;}
   .filter-menu,.sort-menu{position:absolute;top:32px;width:200px;background:#fff;border:1px solid var(--border);
-    border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
+    border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:20;display:none;overflow:hidden;padding:4px;}
   .filter-menu{left:0;}
   .sort-menu{right:0;}
   .filter-menu.open,.sort-menu.open{display:block;}
-  .menu-check-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-radius:8px;font-size:14px;
+  .menu-check-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border-radius:6px;font-size:14px;
     color:var(--text);cursor:pointer;border:none;background:none;text-align:left;font-family:inherit;}
   .menu-check-item:hover{background:var(--bg);}
   .menu-check-item .icon{width:15px;height:15px;color:var(--muted);flex:0 0 auto;}
@@ -225,7 +246,7 @@
   .accordion-header.open .chev{transform:rotate(90deg);}
   .accordion-body{padding:0 8px;display:none;}
   .accordion-body.open{display:block;}
-  .accordion-row{padding:10px 8px;border-top:1px solid var(--border);}
+  .accordion-row{padding:10px 8px;}
   .accordion-row strong{display:block;font-size:12px;font-weight:500;}
   .accordion-row span{display:block;font-size:12px;color:var(--muted);}
 

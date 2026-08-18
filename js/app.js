@@ -81,18 +81,35 @@ document.addEventListener('click', function(e){
     const isToggle = e.target.closest('[data-role="sort"]');
     if(!within && !isToggle) sortMenu.classList.remove('open');
   }
+  // click-away closes the search field, but only if it's still empty —
+  // don't discard a query the user is mid-typing.
+  const searchWrap = document.getElementById('convo-search-wrap');
+  if(searchWrap && searchWrap.classList.contains('open')){
+    const withinSearch = e.target.closest('#convo-search-wrap');
+    const input = document.getElementById('convo-search-input');
+    if(!withinSearch && input && input.value === '') closeConvoSearch();
+  }
 });
 
-// These four popovers all live in the header/list area (as opposed to the
+// These five popovers all live in the header/list area (as opposed to the
 // composer flyouts, which are spatially separate) — each one's toggle closes
-// the other three, since stopPropagation() below means the document-level
+// the other four, since stopPropagation() below means the document-level
 // click-away listener never runs for these clicks, only for genuine
 // click-aways.
 function closeViews(){ const p = document.getElementById('views-popover'); if(p) p.classList.remove('open'); }
 function closeChatMoreMenu(){ const m = document.getElementById('chat-more-menu'); if(m) m.classList.remove('open'); }
+function closeConvoSearch(){
+  const wrap = document.getElementById('convo-search-wrap');
+  if(!wrap || !wrap.classList.contains('open')) return;
+  wrap.classList.remove('open');
+  const btn = wrap.querySelector('.convo-header-btn.round');
+  if(btn){ btn.setAttribute('aria-expanded','false'); btn.title = 'Search'; btn.innerHTML = I('search',16); }
+  const input = document.getElementById('convo-search-input');
+  if(input) input.value = '';
+}
 function toggleViews(e){
   e.stopPropagation();
-  closeChatMoreMenu(); closeFilterMenu(); closeSortMenu();
+  closeChatMoreMenu(); closeFilterMenu(); closeSortMenu(); closeConvoSearch();
   const popover = document.getElementById('views-popover');
   if(popover) popover.classList.toggle('open');
 }
@@ -105,7 +122,7 @@ function selectView(e, key){
 }
 function toggleChatMoreMenu(e){
   e.stopPropagation();
-  closeViews(); closeFilterMenu(); closeSortMenu();
+  closeViews(); closeFilterMenu(); closeSortMenu(); closeConvoSearch();
   const menu = document.getElementById('chat-more-menu');
   if(!menu) return;
   const open = menu.classList.toggle('open');
@@ -117,8 +134,33 @@ function chatMoreAction(e, key){
   const labels = {screenshare:'Screen share',transfer:'Transfer conversation',assign:'Assign to teammate',spam:'Mark as spam'};
   showHint('This is a prototype — ' + (labels[key]||'this action') + ' isn’t wired up yet');
 }
-function toggleFilterMenu(e){ e.stopPropagation(); closeSortMenu(); closeViews(); closeChatMoreMenu(); document.getElementById('filter-menu').classList.toggle('open'); }
-function toggleSortMenu(e){ e.stopPropagation(); closeFilterMenu(); closeViews(); closeChatMoreMenu(); document.getElementById('sort-menu').classList.toggle('open'); }
+function toggleFilterMenu(e){ e.stopPropagation(); closeSortMenu(); closeViews(); closeChatMoreMenu(); closeConvoSearch(); document.getElementById('filter-menu').classList.toggle('open'); }
+function toggleSortMenu(e){ e.stopPropagation(); closeFilterMenu(); closeViews(); closeChatMoreMenu(); closeConvoSearch(); document.getElementById('sort-menu').classList.toggle('open'); }
+function toggleConvoSearch(e){
+  e.stopPropagation();
+  closeViews(); closeChatMoreMenu(); closeFilterMenu(); closeSortMenu();
+  const wrap = document.getElementById('convo-search-wrap');
+  const btn = e.currentTarget;
+  const open = wrap.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
+  btn.title = open ? 'Close search' : 'Search';
+  btn.innerHTML = open ? I('x',16) : I('search',16);
+  if(open){
+    setTimeout(function(){ const input = document.getElementById('convo-search-input'); if(input) input.focus(); }, 120);
+  } else {
+    const input = document.getElementById('convo-search-input');
+    if(input) input.value = '';
+  }
+}
+function onConvoSearchKeydown(e){
+  e.stopPropagation();
+  if(e.key === 'Escape'){
+    closeConvoSearch();
+    e.currentTarget.blur();
+  } else if(e.key === 'Enter' && e.currentTarget.value.trim()){
+    showHint('This is a prototype — search isn’t wired up yet');
+  }
+}
 function closeFilterMenu(){ const m=document.getElementById('filter-menu'); if(m) m.classList.remove('open'); }
 function closeSortMenu(){ const m=document.getElementById('sort-menu'); if(m) m.classList.remove('open'); }
 function selectFilter(e, key){
