@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "preview-server",
+      "type": "shell",
+      "command": "python3 -m http.server 8765",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "http-server",
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Serving HTTP",
+          "endsPattern": "Serving HTTP"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "preview-open-browser",
+      "type": "shell",
+      "command": "open http://localhost:8765",
+      "dependsOn": "preview-server",
+      "problemMatcher": []
+    },
+    {
+      "label": "Preview App",
+      "dependsOn": "preview-open-browser",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

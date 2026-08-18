@@ -90,7 +90,12 @@
      dividers — the card is the only surface, so the page reads as a single sheet. */
   .content{flex:1;min-width:0;display:flex;flex-direction:column;background:transparent;
     padding:16px 16px 16px 8px;min-height:0;}
-  .content.bare{padding:0;}
+  .content.bare{padding:0;position:relative;}
+  /* Inbox chat rows paint opaque backgrounds edge-to-edge, so they sit on top of
+     .sidenav::after in DOM order and clip the rail divider mid-column. Redraw the
+     hairline on this pane with a higher stack order instead. */
+  .content.bare::before{content:'';position:absolute;top:16px;bottom:16px;left:0;width:.5px;
+    background:var(--border-soft);z-index:2;pointer-events:none;}
   .content-card{flex:1;min-width:0;min-height:0;background:#fff;border-radius:16px;
     box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;}
   .topbar{background:transparent;border-bottom:none;padding:20px 24px 8px;flex:0 0 auto;}

@@ -1,0 +1,5 @@
+{
+  "livePreview.defaultPreviewPath": "/index.html",
+  "livePreview.portNumber": 8765,
+  "livePreview.notifyOnOpenLooseFile": false
+}

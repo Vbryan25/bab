@@ -572,7 +572,7 @@ function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
   // A live attempt is now called out by a badge on the row rather than by a
   // section header, so the list can stay a single recency-ordered stream.
   const right = opts.live
-    ? `<span class="live-badge">Live attempt</span>`
+    ? `<span class="live-badge">In-attempt</span>`
     : `<span class="chat-item-time">${timeLabel}</span>`;
   return `<div class="chat-item${state}">
     ${roleAvatar(role, opts.replied)}
@@ -588,7 +588,7 @@ function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
 function pageInbox(){
   return `
   <div class="inbox-shell">
-    <div class="convo-list" style="position:relative;">
+    <div class="convo-list">
       <div class="convo-header">
         <div class="convo-header-left">
           <button class="convo-header-btn" onclick="toggleViews(event)" title="Views">${I('menu',18)}</button>

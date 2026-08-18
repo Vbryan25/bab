@@ -9,6 +9,8 @@
     --sel:#dbd3d1;         /* selected chip / received bubble / filter pills */
     --sel-hover:#e4dedc;
     --unread:#fdfcfc;      /* unread chat rows read as *lighter* than the ground */
+    --chat-read:#e6e1e0;   /* default/read chat rows — a step darker than the ground, not flush with it */
+    --chat-selected:#d2c8c6; /* selected chat row — its own warm-grey, distinct from --sel elsewhere */
     --border:#e8e4e3;
     --border-soft:rgba(124,109,103,.4);
     --text:#0c0a09;
@@ -22,14 +24,16 @@
     --surface-nested:#f8f7f6; /* stat tiles + chart wells inside a white card */
     --pill:#f3f1f1;        /* filter / search pills */
     --pink-hi:#ffe6ec;     /* highlighted stat tile */
-    /* Series palette — the lead series is now near-black, not red, so red is
-       free to mean "above threshold" wherever it appears in a chart. */
-    --series-all:#0c0a09;
-    --series-student:#2a78d6;
-    --series-instructor:#eb6834;
-    --series-admin:#1baf7a;
-    --bar-idle:#c5cad4;
-    --bar-alert:#e7000b;
+    /* Series palette — the lead series is near-black, not red, so red stays
+       free to mean "above threshold" wherever it appears in a chart. The role
+       series reuse the same hues as their badges/avatars elsewhere in the app
+       (orange/blue/green) rather than a separate, unbranded chart palette. */
+    --series-all:var(--text);
+    --series-student:var(--orange-text);
+    --series-instructor:var(--blue-text);
+    --series-admin:var(--green);
+    --bar-idle:#b8aca5; /* warm neutral, in step with --muted/--border rather than a cool grey */
+    --bar-alert:var(--red-text);
     --sent-bubble:#f0dfdb; /* agent's own messages: warm, not saturated green */
     --send-btn:#403e3f;
     --red-text:#e7000b;

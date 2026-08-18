@@ -1,9 +1,9 @@
   /* Inbox specific */
   .inbox-shell{display:flex;flex:1;min-height:0;}
-  /* The conversation list floats on the ground, not a bordered column — but a
-     single hairline still separates it from the chat window. */
+  /* The conversation list floats on the ground with no column border — the chat
+     window card carries its own edge via shadow and radius. */
   .convo-list{width:280px;flex:0 0 280px;background:transparent;display:flex;flex-direction:column;
-    padding-top:16px;min-height:0;border-right:.5px solid var(--border-soft);}
+    padding-top:16px;min-height:0;position:relative;}
   .convo-header{padding:8px 8px 8px 8px;display:flex;align-items:center;justify-content:space-between;}
   .convo-header-left{display:flex;align-items:center;gap:8px;}
   .convo-header h2{font-size:16px;font-weight:600;letter-spacing:-.02em;color:var(--text);}
@@ -30,16 +30,15 @@
   .count-pill{background:var(--bg);color:var(--muted2);font-size:12px;padding:2px 6px;border-radius:999px;min-width:20px;
     text-align:center;}
   .count-pill.squarish{border-radius:4.5px;color:#646464;}
-  /* Read rows sit flush with the ground; unread rows lift *lighter* than it and
-     the selected row is the one warm-grey mass in the column. */
-  /* Rows are separated by a real hairline rather than a gap — a gap would vanish
-     between two read rows, which sit at the same tone as the ground behind them. */
+  /* Read rows sit a step darker than the ground, not flush with it; unread rows
+     lift *lighter* than the ground, and the selected row is its own warm-grey
+     mass, distinct from --sel used elsewhere (filter pills, received bubbles). */
   .chat-item{display:flex;gap:12px;padding:8px 16px;cursor:default;align-items:center;
-    height:60px;flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--border);}
+    height:60px;flex:0 0 auto;background:var(--chat-read);border-bottom:1px solid var(--border);}
   .chat-item.unread{background:var(--unread);}
   .chat-item.unread .chat-item-name{font-weight:600;}
   .chat-item.unread .chat-item-preview p{color:var(--muted3);font-weight:500;}
-  .chat-item.selected{background:var(--sel);}
+  .chat-item.selected{background:var(--chat-selected);}
   .live-badge{background:var(--red-deep);color:#fff;font-size:12px;line-height:18px;padding:0 5px;
     border-radius:4px;white-space:nowrap;flex:0 0 auto;}
   .role-avatar{width:32px;height:32px;border-radius:999px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
