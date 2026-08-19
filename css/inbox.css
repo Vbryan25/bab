@@ -289,6 +289,18 @@
   .modal-btn.confirm{background:var(--red);color:#fff;}
   .modal-btn.confirm:hover{filter:brightness(1.1);}
 
+  /* Welcome modal — same .modal/.backdrop system, just a touch wider to give
+     the hotkey rows room. */
+  .welcome-modal{width:520px;}
+  .welcome-intro{font-size:14px;color:var(--muted);line-height:1.5;}
+  .welcome-hotkeys{display:flex;flex-direction:column;gap:2px;background:var(--surface-nested);border-radius:10px;padding:6px;}
+  .welcome-hotkey-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;}
+  .hotkey-keys{display:flex;gap:4px;flex:0 0 auto;}
+  .hotkey-label{font-size:13px;color:var(--text);}
+  kbd{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;
+    background:#fff;border:1px solid var(--border-soft);border-bottom-width:2px;border-radius:6px;
+    font-family:inherit;font-size:12px;font-weight:600;color:var(--muted3);box-shadow:0 1px 0 rgba(0,0,0,.04);}
+
   .icon{stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;}
   .icon-fill{stroke:none;fill:currentColor;}
   .hint-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;

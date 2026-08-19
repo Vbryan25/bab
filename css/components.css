@@ -24,6 +24,16 @@
      content clipped) instead of the scroll-body simply scrolling. */
   .scroll-body>*{flex-shrink:0;}
 
+  /* Skeleton loading state — a stand-in for wherever a real fetch would sit,
+     briefly shown between page navigations (see showPage in app.js). Sized
+     inline per-instance; the pulse itself is the only shared rule. */
+  @keyframes skeletonPulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  .skeleton{background:var(--surface-nested);animation:skeletonPulse 1.4s ease-in-out infinite;
+    border-radius:8px;flex-shrink:0;}
+  @media (prefers-reduced-motion:reduce){
+    .skeleton{animation:none;}
+  }
+
   /* Tables keep a white body with a hairline frame; chart wells take the nested
      tone (see .chart-card). Either way it's a frame on the card, not a second
      elevation — no shadow at this level. */

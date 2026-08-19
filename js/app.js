@@ -34,13 +34,35 @@ function renderShell(key){
   app.innerHTML = sidenav(cfg.sidenav) + (cfg.secondary ? cfg.secondary() : '')
     + `<div class="content${cfg.bare?' bare':''}">` + body + '</div>';
 }
+// Mirrors renderShell, swapping real content for a shimmer stand-in — nav
+// stays live (instant highlight) while only the content pane "loads".
+function renderSkeleton(key){
+  const cfg = PAGES[key];
+  if(!cfg) return;
+  const app = document.getElementById('app');
+  const mock = cfg.bare ? skeletonInbox() : skeletonStandard();
+  const body = cfg.bare ? mock : '<div class="content-card">' + mock + '</div>';
+  app.innerHTML = sidenav(cfg.sidenav) + (cfg.secondary ? cfg.secondary() : '')
+    + `<div class="content${cfg.bare?' bare':''}">` + body + '</div>';
+}
 
+let appBooted = false;
+let skeletonTimer = null;
 function showPage(key){
   if(!PAGES[key]) return;
   closeCommandMenu();
   closeModal();
-  renderShell(key);
   window.scrollTo(0,0);
+  clearTimeout(skeletonTimer);
+  // The very first paint shouldn't skeleton — only page-to-page navigation
+  // mocks a fetch delay, matching what a real data-backed page would need.
+  if(!appBooted){
+    appBooted = true;
+    renderShell(key);
+    return;
+  }
+  renderSkeleton(key);
+  skeletonTimer = setTimeout(function(){ renderShell(key); }, 300);
 }
 
 document.addEventListener('click', function(e){
@@ -508,6 +530,16 @@ function closeModal(){
 }
 document.getElementById('backdrop').addEventListener('click', closeModal);
 
+function openWelcomeModal(){
+  document.getElementById('welcome-backdrop').classList.add('open');
+  document.getElementById('welcome-modal').classList.add('open');
+}
+function closeWelcomeModal(){
+  document.getElementById('welcome-backdrop').classList.remove('open');
+  document.getElementById('welcome-modal').classList.remove('open');
+}
+document.getElementById('welcome-backdrop').addEventListener('click', closeWelcomeModal);
+
 function goToIntegrityReview(e){
   if(e) e.stopPropagation();
   closeCommandMenu();
@@ -606,3 +638,4 @@ function initChartTooltip(){
 initChartTooltip();
 
 showPage('inbox');
+openWelcomeModal();

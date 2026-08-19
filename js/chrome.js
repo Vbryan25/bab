@@ -171,6 +171,60 @@ function settingsNav(active){
   </div>`;
 }
 
+/* ---------------- skeleton loading state ---------------- */
+// Shown briefly on every page navigation (see showPage in app.js) as a mock
+// stand-in for wherever a real fetch would need one. Reuses the real layout
+// classes (.topbar/.filter-row/.scroll-body, .inbox-shell/.convo-list/
+// .side-panel) so nothing shifts when the real content swaps in — only the
+// content inside those wrappers is a shimmer block.
+function skel(w, h, r){ return `<div class="skeleton" style="width:${w};height:${h};${r?`border-radius:${r};`:''}"></div>`; }
+function skeletonStandard(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>${skel('170px','26px')}</div>
+      <div class="topbar-actions">${skel('84px','34px')}${skel('84px','34px')}${skel('84px','34px')}</div>
+    </div>
+  </div>
+  <div class="filter-row bordered">
+    ${skel('150px','30px')}${skel('110px','30px')}
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-4">
+      ${skel('100%','88px','12px')}${skel('100%','88px','12px')}${skel('100%','88px','12px')}${skel('100%','88px','12px')}
+    </div>
+    ${skel('100%','280px','12px')}
+    ${skel('100%','180px','12px')}
+  </div>`;
+}
+function skeletonInbox(){
+  const rows = Array.from({length:7}).map(()=>skel('auto','60px','10px')).join('');
+  // Fixed px widths, not %: these are flex items with align-self overriding
+  // the default stretch, so a percentage width has no definite containing
+  // block to resolve against and silently collapses to 0.
+  const bubble = (w,align) => `<div class="skeleton" style="width:${w};height:48px;border-radius:12px;align-self:${align};"></div>`;
+  return `
+  <div class="inbox-shell">
+    <div class="convo-list">
+      <div style="padding:16px 12px;">${skel('90px','20px','6px')}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:0 12px;">${rows}</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;padding:20px;gap:16px;min-width:0;">
+      ${skel('200px','20px','6px')}
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;justify-content:flex-end;">
+        ${bubble('220px','flex-start')}
+        ${bubble('300px','flex-end')}
+        ${bubble('170px','flex-start')}
+      </div>
+    </div>
+    <div class="side-panel">
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        ${skel('100%','80px','12px')}${skel('100%','120px','12px')}${skel('100%','120px','12px')}
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ---------------- mini chart helpers ---------------- */
 // Every chart draws itself in on mount (CSS keyframes, see components.css) and
 // carries invisible per-index hit targets so a shared delegated handler in
