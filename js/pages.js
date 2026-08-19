@@ -999,13 +999,14 @@ function pageIntegrityReview(){
 function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
   opts = opts || {};
   // Row state drives surface: selected > unread (lighter than ground) > read.
-  const state = opts.selected ? ' selected' : (opts.unread ? ' unread' : '');
+  const state = (opts.selected ? ' selected' : (opts.unread ? ' unread' : '')) + (opts.pinned ? ' pinned' : '');
   // A live attempt is now called out by a badge on the row rather than by a
   // section header, so the list can stay a single recency-ordered stream.
   const right = opts.live
     ? `<span class="live-badge">In-attempt</span>`
     : `<span class="chat-item-time">${timeLabel}</span>`;
   return `<div class="chat-item${state}" role="button" tabindex="0" aria-current="${opts.selected?'true':'false'}"
+    ${opts.convo?`data-convo="${opts.convo}"`:''}
     onclick="selectChatItem(event,this)" onkeydown="onChatItemKeydown(event)">
     ${roleAvatar(role, opts.replied)}
     <div class="chat-item-body">
@@ -1017,89 +1018,206 @@ function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
     </div>
   </div>`;
 }
-function pageInbox(){
+
+/* Conversations with real backing data — everything selectChatItem() can
+   actually switch the chat window to. Everything else in the list still
+   marks read/selected on click but leaves the thread as-is (see the
+   "only a few conversations have live data" hint), same honesty convention
+   used everywhere else this session rather than faking a full 14-person roster. */
+const CONVERSATIONS = {
+  welcome: {
+    key:'welcome', name:'Integrity Console', role:'system', initials:'IC',
+    started:'Just now', pinned:true,
+    thread:[
+      {mine:false, wide:true, time:'Just now', text:`
+        <p style="margin:0 0 10px;">This is a fully interactive front-end prototype &mdash; a proctoring and academic-integrity support console, designed and built to showcase product and UX work. Every screen is clickable; all data is fictional and no backend is connected.</p>
+        <div class="welcome-hotkeys">
+          <div class="welcome-hotkey-row"><div class="hotkey-keys"><kbd>Esc</kbd></div><div class="hotkey-label">Exit prototype, return to portfolio</div></div>
+          <div class="welcome-hotkey-row"><div class="hotkey-keys"><kbd>&#8984;</kbd><kbd>G</kbd></div><div class="hotkey-label">Show guided walkthroughs</div></div>
+        </div>`},
+    ],
+  },
+  jordan: {
+    key:'jordan', name:'Jordan Lee', role:'student', initials:'JL', canvas:true,
+    started:'2:44 PM',
+    thread:[
+      {mine:false, text:'The lockdown browser closed mid-exam. What do I do?', time:'2:44 PM'},
+      {mine:true, text:'Reopen it from your desktop shortcut &mdash; your progress is saved automatically.', time:'2:45 PM'},
+    ],
+    fields:[['Student Name','Jordan Lee'],['Student ID','e6a0c4f2b8d6e0a4'],['Course','BIO 201 &middot; Cell Biology'],
+      ['Exam','Midterm &mdash; Ch. 4-7'],['Institution','Cascade State University']],
+  },
+  aisha: {
+    key:'aisha', name:'Aisha Patel', role:'student', initials:'AP',
+    started:'1:12 PM',
+    thread:[
+      {mine:false, text:'I keep getting a black screen after the proctoring loads', time:'1:12 PM'},
+      {mine:true, text:"Let's try clearing the app's cache &mdash; go to Settings &gt; Privacy &gt; Clear browsing data, then relaunch.", time:'1:13 PM'},
+      {mine:false, text:'That worked, thank you!', time:'1:16 PM'},
+    ],
+    fields:[['Student Name','Aisha Patel'],['Student ID','8f1c2d4e6a0b3f9c'],['Course','PSYC 210 &middot; Intro Psychology'],
+      ['Exam','Quiz 4'],['Institution','Cascade State University']],
+    accordion:{icon:'appWindow', title:'Environment', rows:[
+      ['Canvas &mdash; PSYC 210 Exam','chat.theproctoring.com'],
+      ['Access status','Cleared &mdash; session resumed'],
+    ]},
+  },
+  maya: {
+    key:'maya', name:'Maya Chen', role:'student', initials:'MC',
+    started:'1:58 PM',
+    thread:[
+      {mine:false, text:'My camera permission keeps getting denied', time:'1:58 PM'},
+      {mine:true, text:'No problem &mdash; click the camera icon in your address bar and set it to Allow, then refresh the page.', time:'1:59 PM'},
+    ],
+    fields:[['Student Name','Maya Chen'],['Student ID','a3f091cbb7e2d9c1'],['Course','MATH 220 &middot; Calculus II'],
+      ['Exam','Quiz 3'],['Institution','Cascade State University']],
+    accordion:{icon:'cpu', title:'Hardware &amp; System', rows:[
+      ['Webcam','Permission blocked by browser'],
+      ['Browser','Chrome 128.0.6613'],
+      ['Displays Detected','1 monitor'],
+    ]},
+  },
+  dana: {
+    key:'dana', name:'Dana Ortiz', role:'admin', initials:'DO',
+    started:'12:41 PM',
+    thread:[
+      {mine:false, text:'Is there a way to reschedule my exam time', time:'12:41 PM'},
+      {mine:true, text:'Yes &mdash; reschedule requests go through the Institutions settings page. I can walk you through submitting one now if you’d like.', time:'12:43 PM'},
+    ],
+    fields:[['Name','Dana Ortiz'],['Role','Administrator'],['Institution','Northfield College'],['Request type','Reschedule policy question']],
+  },
+  ty: {
+    key:'ty', name:'Ty Fischer', role:'student', initials:'TF',
+    started:'11:20 AM',
+    thread:[
+      {mine:false, text:'The proctoring extension says it needs an update', time:'11:20 AM'},
+      {mine:true, text:'Go ahead and update it from the Chrome Web Store &mdash; it only takes a minute, and your exam won’t start until it’s current.', time:'11:21 AM'},
+    ],
+    fields:[['Student Name','Ty Fischer'],['Student ID','5b7e2a9c1f4d8036'],['Course','ENG 105 &middot; Composition'],
+      ['Exam','Final'],['Institution','Northfield College']],
+    accordion:{icon:'puzzle', title:'Extensions', rows:[
+      ['Proctoring Extension','v2.0.1 &mdash; update available'],
+      ['Grammarly','Disabled during exam'],
+    ]},
+  },
+  visitor: {
+    key:'visitor', name:'Unverified visitor', role:'unknown', initials:'?',
+    started:'10:05 AM',
+    thread:[
+      {mine:false, text:"Hi, I can't access my exam page", time:'10:05 AM'},
+      {mine:true, text:'I can help &mdash; first I’ll need to verify your identity. Can you confirm the email you used to register for this exam?', time:'10:06 AM'},
+    ],
+    fields:[['Name','Not yet verified'],['Student ID','Pending verification'],['Course','Unknown'],
+      ['Exam','Unknown'],['Institution','Unknown']],
+  },
+};
+// The inbox starts with only the pinned Welcome message — everything else
+// trickles in one at a time at randomized, realistic intervals (see
+// startInboxTrickle in app.js) rather than appearing all at once. The first
+// six carry real conversation data (data-convo); the rest are decorative,
+// same honesty convention as everywhere else this session.
+// unread:true isn't set per-entry — every arrival is forced unread at
+// insert time (see demoAddChatter in app.js), since a live inbox never
+// receives a conversation that's already "read".
+const INBOX_ARRIVALS = [
+  {role:'student', label:'Student', time:'&mdash;', preview:'I keep getting a black screen after The proctoring loads', opts:{live:true,convo:'aisha'}},
+  {role:'unknown', label:'Unknown', time:'&mdash;', preview:"Hi, I can't access my exam page", opts:{live:true,convo:'visitor'}},
+  {role:'student', label:'Student', time:'2m ago', preview:'The lockdown browser closed mid-exam. What do I do?', opts:{replied:true,convo:'jordan'}},
+  {role:'student', label:'Student', time:'4m ago', preview:'My camera permission keeps getting denied', opts:{convo:'maya'}},
+  {role:'admin', label:'Administrator', time:'7m ago', preview:'Is there a way to reschedule my exam time', opts:{convo:'dana'}},
+  {role:'student', label:'Student', time:'3m ago', preview:'The proctoring extension says it needs an update', opts:{replied:true,convo:'ty'}},
+  {role:'student', label:'Student', time:'6 min left', preview:'The lockdown browser closed mid-exam', opts:{replied:true}},
+  {role:'unknown', label:'Unknown', time:'8 min ago', preview:"Hi, I can't access my exam page", opts:{replied:true}},
+  {role:'admin', label:'Administrator', time:'6m ago', preview:'Thanks, that should resolve it &mdash; let me know', opts:{replied:true}},
+  {role:'student', label:'Student', time:'2m ago', preview:'I keep getting a black screen after The proctoring loads', opts:{replied:true}},
+  {role:'student', label:'Student', time:'2m ago', preview:'Screen recording permission keeps resetting', opts:{replied:true}},
+  {role:'unknown', label:'Unknown', time:'9m ago', preview:'My screen share stopped working mid-exam', opts:{}},
+  {role:'student', label:'Student', time:'2m ago', preview:"Extension update loop won't finish installing", opts:{replied:true}},
+  {role:'unknown', label:'Unknown', time:'18m ago', preview:'Do I need two monitors disconnected?', opts:{}},
+];
+// A handful of extra late arrivals once the main list has finished trickling
+// in, so the inbox still feels "live" for a bit rather than just stopping.
+const INBOX_TAIL_ARRIVALS = [
+  {role:'student', label:'Student', time:'&mdash;', preview:'My exam timer looks wrong, is that normal?', opts:{live:true}},
+  {role:'unknown', label:'Unknown', time:'&mdash;', preview:"I got logged out mid-exam, what do I do?", opts:{live:true}},
+  {role:'admin', label:'Administrator', time:'&mdash;', preview:"Can I get a report of today's flagged sessions?", opts:{live:true}},
+];
+function convoThreadHtml(conv){
+  const rows = conv.thread.map(m => {
+    if(m.mine) return `<div class="msg-row mine"><div class="msg-col mine"><div class="bubble mine">${m.text}</div><span class="msg-time">${m.time}</span></div></div>`;
+    const colClass = m.wide ? ' welcome-col' : '';
+    const bubbleClass = m.wide ? ' welcome-bubble' : '';
+    return `<div class="msg-row"><div class="msg-avatar">${conv.initials}</div><div class="msg-col${colClass}"><div class="bubble${bubbleClass}">${m.text}</div><span class="msg-time">${m.time}</span></div></div>`;
+  }).join('');
+  if(conv.role === 'system') return rows;
+  return `<div class="system-msg">Chat Started - ${conv.started}</div>${rows}`;
+}
+function convoAccordionsHtml(conv){
+  if(conv.key === 'jordan') return jordanAccordionsHtml();
+  if(!conv.accordion) return '';
+  const a = conv.accordion;
+  return `<div class="accordion-header open" onclick="toggleAccordion(event,'acc-${conv.key}')"><span class="left">${I(a.icon,16)}${a.title}</span><span class="chev">${I('chevronRight',16)}</span></div>
+    <div class="accordion-body open" id="acc-${conv.key}">
+      ${a.rows.map(r=>`<div class="accordion-row"><strong>${r[0]}</strong><span>${r[1]}</span></div>`).join('')}
+    </div>`;
+}
+// Jordan is the one flagship conversation with the full 4-section device/exam
+// breakdown — extracted so both the initial render and renderConversation()
+// (js/app.js) produce the exact same markup when the demo cycles back to him.
+function jordanAccordionsHtml(){
   return `
-  <div class="inbox-shell">
-    <div class="convo-list">
-      <div class="convo-header">
-        <div class="convo-header-left">
-          <button class="convo-header-btn" onclick="toggleViews(event)" title="Views">${I('menu',18)}</button>
-          <h2>Chats</h2>
+        <div class="accordion-header" onclick="toggleAccordion(event,'acc-userdata')"><span class="left">${I('user',16)}User Data</span><span class="chev">${I('chevronRight',16)}</span></div>
+        <div class="accordion-body" id="acc-userdata">
+          <div class="accordion-row"><strong>Email</strong><span>jordan.lee@cascadestate.edu</span></div>
+          <div class="accordion-row"><strong>Enrollment Status</strong><span>Active &mdash; Fall 2026</span></div>
+          <div class="accordion-row"><strong>Accommodations</strong><span>None on file</span></div>
+          <div class="accordion-row"><strong>Time Zone</strong><span>Pacific Time (UTC-7)</span></div>
         </div>
-        <div class="convo-search-wrap" id="convo-search-wrap">
-          <div class="convo-search-form">
-            <input id="convo-search-input" class="convo-search-input" type="text" placeholder="Search conversations" onkeydown="onConvoSearchKeydown(event)">
-          </div>
-          <button class="convo-header-btn round" onclick="toggleConvoSearch(event)" title="Search" aria-label="Search" aria-expanded="false">${I('search',16)}</button>
+        <div class="accordion-header" onclick="toggleAccordion(event,'acc-hardware')"><span class="left">${I('cpu',16)}Hardware &amp; System</span><span class="chev">${I('chevronRight',16)}</span></div>
+        <div class="accordion-body" id="acc-hardware">
+          <div class="accordion-row"><strong>Operating System</strong><span>Windows 11 Home</span></div>
+          <div class="accordion-row"><strong>Browser</strong><span>Chrome 128.0.6613</span></div>
+          <div class="accordion-row"><strong>Lockdown Browser Version</strong><span>2.1.4 &mdash; up to date</span></div>
+          <div class="accordion-row"><strong>Webcam</strong><span>Logitech C920 &mdash; Connected</span></div>
+          <div class="accordion-row"><strong>Microphone</strong><span>Built-in &mdash; Connected</span></div>
+          <div class="accordion-row"><strong>Displays Detected</strong><span>1 monitor</span></div>
         </div>
-      </div>
-      <div id="views-popover" class="views-popover">
-        <div class="views-popover-header">Inbox</div>
-        <div class="views-list">
-          <div class="view-item active" onclick="selectView(event,'your-inbox')">
-            ${I('inbox',16)}Your Inbox <span class="view-count">3</span>
-          </div>
-          <div class="view-item" onclick="selectView(event,'mentions')">
-            ${I('user',16)}Mentions <span class="view-count">0</span>
-          </div>
-          <div class="view-item" onclick="selectView(event,'all')">
-            ${I('inbox',16)}All <span class="view-count">11</span>
-          </div>
-          <div class="view-item" onclick="selectView(event,'unassigned')">
-            ${I('inbox',16)}Unassigned <span class="view-count">8</span>
-          </div>
-          <div class="view-item" onclick="selectView(event,'spam')">
-            ${I('alertCircle',16)}Spam <span class="view-count">0</span>
-          </div>
+        <div class="accordion-header" onclick="toggleAccordion(event,'acc-extensions')"><span class="left">${I('puzzle',16)}Extensions</span><span class="chev">${I('chevronRight',16)}</span></div>
+        <div class="accordion-body" id="acc-extensions">
+          <div class="accordion-row"><strong>Grammarly</strong><span>Disabled during exam</span></div>
+          <div class="accordion-row"><strong>1Password</strong><span>Disabled during exam</span></div>
+          <div class="accordion-row"><strong>Honey</strong><span>Not detected running</span></div>
         </div>
-      </div>
-      <div class="convo-filters">
-        <div class="filter-tab-wrap">
-          <button class="filter-tab" data-role="filter" onclick="toggleFilterMenu(event)">
-            <span class="filter-tab-label">${FILTER_LABELS[inboxStatusFilter]}</span>${I('chevronDown',12)}
-          </button>
-          <div id="filter-menu" class="filter-menu">
-            <button class="menu-check-item${inboxStatusFilter==='open'?' active':''}" onclick="selectFilter(event,'open')">${I('inbox',15)}Open<span class="check">${I('check',14)}</span></button>
-            <button class="menu-check-item${inboxStatusFilter==='closed'?' active':''}" onclick="selectFilter(event,'closed')">${I('x',15)}Closed<span class="check">${I('check',14)}</span></button>
-            <button class="menu-check-item${inboxStatusFilter==='all'?' active':''}" onclick="selectFilter(event,'all')">${I('inbox',15)}Open &amp; Closed<span class="check">${I('check',14)}</span></button>
-          </div>
+        <div class="accordion-header" onclick="toggleAccordion(event,'acc-examsettings')"><span class="left">${I('settings2',16)}Exam Settings</span><span class="chev">${I('chevronRight',16)}</span></div>
+        <div class="accordion-body" id="acc-examsettings">
+          <div class="accordion-row"><strong>Time Limit</strong><span>90 minutes</span></div>
+          <div class="accordion-row"><strong>Attempts Allowed</strong><span>1</span></div>
+          <div class="accordion-row"><strong>Webcam Required</strong><span>Yes</span></div>
+          <div class="accordion-row"><strong>Allowed Materials</strong><span>None &mdash; closed book</span></div>
+          <div class="accordion-row"><strong>Extra Time Granted</strong><span>None</span></div>
         </div>
-        <div class="filter-tab-wrap">
-          <button class="filter-tab" data-role="sort" onclick="toggleSortMenu(event)">
-            <span class="filter-tab-label">${SORT_LABELS[inboxSortBy]}</span>${I('listFilter',12)}
-          </button>
-          <div id="sort-menu" class="sort-menu">
-            <button class="menu-check-item${inboxSortBy==='last-activity'?' active':''}" onclick="selectSort(event,'last-activity')">${I('clock',15)}Last activity<span class="check">${I('check',14)}</span></button>
-            <button class="menu-check-item${inboxSortBy==='date-started'?' active':''}" onclick="selectSort(event,'date-started')">${I('calClock',15)}Date started<span class="check">${I('check',14)}</span></button>
-            <button class="menu-check-item${inboxSortBy==='waiting-since'?' active':''}" onclick="selectSort(event,'waiting-since')">${I('hourglass',15)}Waiting since<span class="check">${I('check',14)}</span></button>
-          </div>
-        </div>
-      </div>
-      <div class="convo-scroll">
-        ${inboxChatItem('student','Student','&mdash;','I keep getting a black screen after The proctoring loads',{live:true,unread:true})}
-        ${inboxChatItem('unknown','Unknown','&mdash;',"Hi, I can't access my exam page",{live:true,unread:true})}
-        ${inboxChatItem('student','Student','2m ago','The lockdown browser closed mid-exam. What do I do?',{replied:true})}
-        ${inboxChatItem('student','Student','4m ago','My camera permission keeps getting denied',{})}
-        ${inboxChatItem('admin','Administrator','7m ago','Is there a way to reschedule my exam time',{selected:true})}
-        ${inboxChatItem('student','Student','3m ago','The proctoring extension says it needs an update',{replied:true})}
-        ${inboxChatItem('student','Student','6 min left','The lockdown browser closed mid-exam',{replied:true})}
-        ${inboxChatItem('unknown','Unknown','8 min ago',"Hi, I can't access my exam page",{replied:true})}
-        ${inboxChatItem('admin','Administrator','6m ago','Thanks, that should resolve it &mdash; let me know',{replied:true})}
-        ${inboxChatItem('student','Student','2m ago','I keep getting a black screen after The proctoring loads',{replied:true})}
-        ${inboxChatItem('student','Student','2m ago','Screen recording permission keeps resetting',{replied:true})}
-        ${inboxChatItem('unknown','Unknown','9m ago','My screen share stopped working mid-exam',{})}
-        ${inboxChatItem('student','Student','2m ago',"Extension update loop won't finish installing",{replied:true})}
-        ${inboxChatItem('unknown','Unknown','18m ago','Do I need two monitors disconnected?',{})}
-      </div>
-    </div>
+        <div class="accordion-header open" onclick="toggleAccordion(event,'acc-environment')"><span class="left">${I('appWindow',16)}Environment</span><span class="chev">${I('chevronRight',16)}</span></div>
+        <div class="accordion-body open" id="acc-environment">
+          <div class="accordion-row"><strong>Canvas &mdash; BIO 201 Exam</strong><span>chat.theproctoring.com</span></div>
+          <div class="accordion-row"><strong>Chegg &mdash; Homework Help</strong><span>May conflict with lockdown browser</span></div>
+          <div class="accordion-row"><strong>Access status</strong><span>Identity re-verification required before re-entry</span></div>
+        </div>`;
+}
+function pageInbox(){
+  const welcome = CONVERSATIONS.welcome;
+  const listBody = `
+        ${inboxChatItem(welcome.role, 'Welcome', welcome.started, 'This is a fully interactive front-end prototype &mdash; tap to read more.', {convo:'welcome', selected: activeConvo==='welcome', pinned:true})}
+  `;
+  const activeConv = CONVERSATIONS[activeConvo] || welcome;
+  const chatArea = `
     <div class="chat-window-wrap">
       <div class="chat-window">
         <div class="chat-header">
           <div class="chat-header-id">
-            <strong>Jordan Lee</strong>
+            <strong>${activeConv.name}</strong>
             <div class="chat-header-badges">
-              <span class="badge badge-student">Student</span>
-              <span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>
+              ${roleBadge(activeConv.role)}
+              ${activeConv.canvas ? `<span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>` : ''}
             </div>
           </div>
           <div class="chat-actions">
@@ -1121,9 +1239,7 @@ function pageInbox(){
           </div>
         </div>
         <div class="chat-thread">
-          <div class="system-msg">Chat Started - 2:44 PM</div>
-          <div class="msg-row"><div class="msg-avatar">JL</div><div class="msg-col"><div class="bubble">The lockdown browser closed mid-exam. What do I do?</div><span class="msg-time">2:44 PM</span></div></div>
-          <div class="msg-row mine"><div class="msg-col mine"><div class="bubble mine">Reopen it from your desktop shortcut &mdash; your progress is saved automatically.</div><span class="msg-time">2:45 PM</span></div></div>
+          ${convoThreadHtml(activeConv)}
         </div>
         <div class="composer-wrap">
           <div class="composer">
@@ -1184,49 +1300,71 @@ function pageInbox(){
           </div>
         </div>
         <div class="field-row-list">
-          <div class="field-row"><span>Student Name</span><strong>Jordan Lee</strong></div>
-          <div class="field-row"><span>Student ID</span><strong>e6a0c4f2b8d6e0a4</strong></div>
-          <div class="field-row"><span>Course</span><strong>BIO 201 &middot; Cell Biology</strong></div>
-          <div class="field-row"><span>Exam</span><strong>Midterm &mdash; Ch. 4-7</strong></div>
-          <div class="field-row"><span>Institution</span><strong>Cascade State University</strong></div>
+          ${activeConv.fields ? activeConv.fields.map(f=>`<div class="field-row"><span>${f[0]}</span><strong>${f[1]}</strong></div>`).join('') : '<div class="field-row-empty">No details to show for this message.</div>'}
         </div>
-        <div class="accordion-header" onclick="toggleAccordion(event,'acc-userdata')"><span class="left">${I('user',16)}User Data</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-userdata">
-          <div class="accordion-row"><strong>Email</strong><span>jordan.lee@cascadestate.edu</span></div>
-          <div class="accordion-row"><strong>Enrollment Status</strong><span>Active &mdash; Fall 2026</span></div>
-          <div class="accordion-row"><strong>Accommodations</strong><span>None on file</span></div>
-          <div class="accordion-row"><strong>Time Zone</strong><span>Pacific Time (UTC-7)</span></div>
-        </div>
-        <div class="accordion-header" onclick="toggleAccordion(event,'acc-hardware')"><span class="left">${I('cpu',16)}Hardware &amp; System</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-hardware">
-          <div class="accordion-row"><strong>Operating System</strong><span>Windows 11 Home</span></div>
-          <div class="accordion-row"><strong>Browser</strong><span>Chrome 128.0.6613</span></div>
-          <div class="accordion-row"><strong>Lockdown Browser Version</strong><span>2.1.4 &mdash; up to date</span></div>
-          <div class="accordion-row"><strong>Webcam</strong><span>Logitech C920 &mdash; Connected</span></div>
-          <div class="accordion-row"><strong>Microphone</strong><span>Built-in &mdash; Connected</span></div>
-          <div class="accordion-row"><strong>Displays Detected</strong><span>1 monitor</span></div>
-        </div>
-        <div class="accordion-header" onclick="toggleAccordion(event,'acc-extensions')"><span class="left">${I('puzzle',16)}Extensions</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-extensions">
-          <div class="accordion-row"><strong>Grammarly</strong><span>Disabled during exam</span></div>
-          <div class="accordion-row"><strong>1Password</strong><span>Disabled during exam</span></div>
-          <div class="accordion-row"><strong>Honey</strong><span>Not detected running</span></div>
-        </div>
-        <div class="accordion-header" onclick="toggleAccordion(event,'acc-examsettings')"><span class="left">${I('settings2',16)}Exam Settings</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body" id="acc-examsettings">
-          <div class="accordion-row"><strong>Time Limit</strong><span>90 minutes</span></div>
-          <div class="accordion-row"><strong>Attempts Allowed</strong><span>1</span></div>
-          <div class="accordion-row"><strong>Webcam Required</strong><span>Yes</span></div>
-          <div class="accordion-row"><strong>Allowed Materials</strong><span>None &mdash; closed book</span></div>
-          <div class="accordion-row"><strong>Extra Time Granted</strong><span>None</span></div>
-        </div>
-        <div class="accordion-header open" onclick="toggleAccordion(event,'acc-environment')"><span class="left">${I('appWindow',16)}Environment</span><span class="chev">${I('chevronRight',16)}</span></div>
-        <div class="accordion-body open" id="acc-environment">
-          <div class="accordion-row"><strong>Canvas &mdash; BIO 201 Exam</strong><span>chat.theproctoring.com</span></div>
-          <div class="accordion-row"><strong>Chegg &mdash; Homework Help</strong><span>May conflict with lockdown browser</span></div>
-          <div class="accordion-row"><strong>Access status</strong><span>Identity re-verification required before re-entry</span></div>
-        </div>
+        <div id="side-panel-accordions">${convoAccordionsHtml(activeConv)}</div>
       </div>
     </div>
+  `;
+  return `
+  <div class="inbox-shell">
+    <div class="convo-list">
+      <div class="convo-header">
+        <div class="convo-header-left">
+          <button class="convo-header-btn" onclick="toggleViews(event)" title="Views">${I('menu',18)}</button>
+          <h2>Chats</h2>
+        </div>
+        <div class="convo-search-wrap" id="convo-search-wrap">
+          <div class="convo-search-form">
+            <input id="convo-search-input" class="convo-search-input" type="text" placeholder="Search conversations" onkeydown="onConvoSearchKeydown(event)">
+          </div>
+          <button class="convo-header-btn round" onclick="toggleConvoSearch(event)" title="Search" aria-label="Search" aria-expanded="false">${I('search',16)}</button>
+        </div>
+      </div>
+      <div id="views-popover" class="views-popover">
+        <div class="views-popover-header">Inbox</div>
+        <div class="views-list">
+          <div class="view-item active" onclick="selectView(event,'your-inbox')">
+            ${I('inbox',16)}Your Inbox <span class="view-count">0</span>
+          </div>
+          <div class="view-item" onclick="selectView(event,'mentions')">
+            ${I('user',16)}Mentions <span class="view-count">0</span>
+          </div>
+          <div class="view-item" onclick="selectView(event,'all')">
+            ${I('inbox',16)}All <span class="view-count">0</span>
+          </div>
+          <div class="view-item" onclick="selectView(event,'unassigned')">
+            ${I('inbox',16)}Unassigned <span class="view-count">0</span>
+          </div>
+          <div class="view-item" onclick="selectView(event,'spam')">
+            ${I('alertCircle',16)}Spam <span class="view-count">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="convo-filters">
+        <div class="filter-tab-wrap">
+          <button class="filter-tab" data-role="filter" onclick="toggleFilterMenu(event)">
+            <span class="filter-tab-label">${FILTER_LABELS[inboxStatusFilter]}</span>${I('chevronDown',12)}
+          </button>
+          <div id="filter-menu" class="filter-menu">
+            <button class="menu-check-item${inboxStatusFilter==='open'?' active':''}" onclick="selectFilter(event,'open')">${I('inbox',15)}Open<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxStatusFilter==='closed'?' active':''}" onclick="selectFilter(event,'closed')">${I('x',15)}Closed<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxStatusFilter==='all'?' active':''}" onclick="selectFilter(event,'all')">${I('inbox',15)}Open &amp; Closed<span class="check">${I('check',14)}</span></button>
+          </div>
+        </div>
+        <div class="filter-tab-wrap">
+          <button class="filter-tab" data-role="sort" onclick="toggleSortMenu(event)">
+            <span class="filter-tab-label">${SORT_LABELS[inboxSortBy]}</span>${I('listFilter',12)}
+          </button>
+          <div id="sort-menu" class="sort-menu">
+            <button class="menu-check-item${inboxSortBy==='last-activity'?' active':''}" onclick="selectSort(event,'last-activity')">${I('clock',15)}Last activity<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxSortBy==='date-started'?' active':''}" onclick="selectSort(event,'date-started')">${I('calClock',15)}Date started<span class="check">${I('check',14)}</span></button>
+            <button class="menu-check-item${inboxSortBy==='waiting-since'?' active':''}" onclick="selectSort(event,'waiting-since')">${I('hourglass',15)}Waiting since<span class="check">${I('check',14)}</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="convo-scroll">${listBody}</div>
+    </div>
+    ${chatArea}
   </div>`;
 }

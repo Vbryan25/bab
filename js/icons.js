@@ -99,9 +99,22 @@ function Ilms(name, size){
 /* Inbox context panel: collapsed state is module-level so it survives renderShell() */
 let sidePanelCollapsed = false;
 
+/* Which conversation the chat window is currently showing — starts on the
+   pinned Welcome message, since the inbox no longer opens with an empty
+   state or a modal. Module-level so pageInbox() knows what to render and a
+   real click (selectChatItem) can hand off from the trickle. */
+let activeConvo = 'welcome';
+
+/* Pending timers for the inbox's "conversations trickling in" sequence
+   (see startInboxTrickle in app.js) — module-level so a real click can find
+   and cancel them. */
+let inboxDemoTimers = [];
+
 /* Inbox filter/sort selection: module-level so it survives renderShell() and
-   so the tab label + popover checkmark read from one source of truth. */
-const FILTER_LABELS = {open:'13 Open', closed:'4 Closed', all:'17 Open & Closed'};
+   so the tab label + popover checkmark read from one source of truth. Starts
+   low since the list opens with just the pinned Welcome message, and climbs
+   as conversations trickle in (see demoAddChatter in app.js). */
+const FILTER_LABELS = {open:'0 Open', closed:'4 Closed', all:'0 Open & Closed'};
 const SORT_LABELS = {'last-activity':'Last activity', 'date-started':'Date started', 'waiting-since':'Waiting since'};
 let inboxStatusFilter = 'open';
 let inboxSortBy = 'last-activity';

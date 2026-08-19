@@ -225,6 +225,8 @@ function selectSort(e, key){
 // live data in this prototype.
 function selectChatItem(e, row){
   if(row.classList.contains('selected')) return;
+  cancelInboxDemo(); // a real click always takes control back from the auto-demo
+  const key = row.dataset.convo;
   document.querySelectorAll('.chat-item.selected').forEach(function(el){
     el.classList.remove('selected');
     el.setAttribute('aria-current','false');
@@ -232,7 +234,80 @@ function selectChatItem(e, row){
   row.classList.remove('unread');
   row.classList.add('selected');
   row.setAttribute('aria-current','true');
-  showHint('This is a prototype — only Jordan Lee’s conversation has live data');
+  if(key && CONVERSATIONS[key]){
+    renderConversation(key);
+  } else {
+    showHint('This is a prototype — only a few conversations have live data');
+  }
+}
+// Swaps the chat window's header/thread/side-panel to a different
+// CONVERSATIONS entry in place — the composer, command menu, and emoji/AI
+// menus are left untouched so nothing mid-interaction gets reset.
+function renderConversation(key){
+  const conv = CONVERSATIONS[key];
+  if(!conv) return;
+  activeConvo = key;
+  const nameEl = document.querySelector('.chat-header-id strong');
+  if(nameEl) nameEl.textContent = conv.name;
+  const badgesEl = document.querySelector('.chat-header-badges');
+  if(badgesEl){
+    badgesEl.innerHTML = roleBadge(conv.role) + (conv.canvas
+      ? `<span class="icon-btn-square" style="border:.5px solid var(--border-soft);" title="Canvas">${Ilms('canvas',16)}</span>`
+      : '');
+  }
+  const threadEl = document.querySelector('.chat-thread');
+  if(threadEl) threadEl.innerHTML = convoThreadHtml(conv);
+  const fieldsEl = document.querySelector('.field-row-list');
+  if(fieldsEl) fieldsEl.innerHTML = conv.fields
+    ? conv.fields.map(f=>`<div class="field-row"><span>${f[0]}</span><strong>${f[1]}</strong></div>`).join('')
+    : '<div class="field-row-empty">No details to show for this message.</div>';
+  const accEl = document.getElementById('side-panel-accordions');
+  if(accEl) accEl.innerHTML = convoAccordionsHtml(conv);
+  const composer = document.getElementById('composer-input');
+  if(composer){ composer.innerHTML = ''; updateSendBtn(); }
+}
+
+/* ---------------- inbox intro trickle ---------------- */
+// The inbox starts with only the pinned Welcome message. Every other
+// conversation trickles in one at a time, at a randomized interval, so the
+// arrival rate reads as live traffic rather than a scripted batch. Rows land
+// just below the pinned Welcome row (which never moves). Arrivals never
+// select themselves — the agent stays on whatever they're reading (Welcome,
+// by default) until they choose to click into something. Any real click
+// cancels every pending timer immediately.
+function startInboxTrickle(){
+  const queue = INBOX_ARRIVALS.concat(INBOX_TAIL_ARRIVALS);
+  let i = 0;
+  function next(){
+    if(i >= queue.length) return;
+    const item = queue[i++];
+    if(document.querySelector('.inbox-shell')) demoAddChatter(item);
+    const delay = 1400 + Math.random()*2600;
+    inboxDemoTimers.push(setTimeout(next, delay));
+  }
+  inboxDemoTimers.push(setTimeout(next, 1800));
+}
+function cancelInboxDemo(){
+  inboxDemoTimers.forEach(clearTimeout);
+  inboxDemoTimers = [];
+}
+function demoAddChatter(item){
+  const scroll = document.querySelector('.convo-scroll');
+  if(!scroll) return;
+  const pinned = scroll.querySelector('.chat-item.pinned');
+  // Every arrival lands unread until the agent opens it — enforced here
+  // rather than trusted per-entry, since a live inbox never receives a
+  // conversation that's already "read".
+  const opts = Object.assign({}, item.opts, {unread:true});
+  const html = inboxChatItem(item.role, item.label, item.time, item.preview, opts);
+  if(pinned) pinned.insertAdjacentHTML('afterend', html);
+  else scroll.insertAdjacentHTML('afterbegin', html);
+  FILTER_LABELS.open = FILTER_LABELS.open.replace(/\d+/, m => String(Number(m)+1));
+  FILTER_LABELS.all = FILTER_LABELS.all.replace(/\d+/, m => String(Number(m)+1));
+  if(inboxStatusFilter !== 'closed'){
+    const label = document.querySelector('[data-role="filter"] .filter-tab-label');
+    if(label) label.textContent = FILTER_LABELS[inboxStatusFilter];
+  }
 }
 function onChatItemKeydown(e){
   if(e.key === 'Enter' || e.key === ' '){
@@ -541,16 +616,6 @@ function closeModal(){
 }
 document.getElementById('backdrop').addEventListener('click', closeModal);
 
-function openWelcomeModal(){
-  document.getElementById('welcome-backdrop').classList.add('open');
-  document.getElementById('welcome-modal').classList.add('open');
-}
-function closeWelcomeModal(){
-  document.getElementById('welcome-backdrop').classList.remove('open');
-  document.getElementById('welcome-modal').classList.remove('open');
-}
-document.getElementById('welcome-backdrop').addEventListener('click', closeWelcomeModal);
-
 function goToIntegrityReview(e){
   if(e) e.stopPropagation();
   closeCommandMenu();
@@ -813,4 +878,4 @@ function initChartTooltip(){
 initChartTooltip();
 
 showPage('inbox');
-openWelcomeModal();
+startInboxTrickle();
