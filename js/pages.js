@@ -93,7 +93,7 @@ function pageKnowledgeSources(){
 /* ---------- Knowledge: Content ---------- */
 function pageKnowledgeContent(){
   const row = (icon, name, type, usedIn, edited, author) => `
-    <tr>
+    <tr data-name="${name.replace(/&amp;/g,'&').toLowerCase()}" data-type="${type}">
       <td class="strong"><span style="display:inline-flex;align-items:center;gap:8px;">${I(icon,16)}${name}</span></td>
       <td>${type}</td><td>${usedIn}</td><td>${edited}</td><td>${author}</td>
     </tr>`;
@@ -105,21 +105,22 @@ function pageKnowledgeContent(){
     </div>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search content</button>
-    <button class="btn">All types</button>
-    <button class="btn">Folders</button>
+    ${searchField('content-search','Search content','onKnowledgeContentSearch')}
+    ${reportFilterDropdown('content-type','All types',['Folder','Article','Snippet'],'selectContentType')}
+    <button class="btn btn-clickable" onclick="showHint('This is a prototype — folder view isn’t wired up yet')">${I('folder',13)} Folders</button>
   </div>
   <div class="scroll-body">
     <div class="card">
       <table>
         <thead><tr><th>Name</th><th>Type</th><th>Used in</th><th>Last edited</th><th>Author</th></tr></thead>
-        <tbody>
+        <tbody id="content-tbody">
           ${row('folder','Restart Lockdown Browser','Folder','AI Assist, Copilot','Aug 12, 2026','Victoria Bryan')}
           ${row('fileText','Camera &amp; mic permissions','Article','Help Center, AI Assist','Aug 10, 2026','Victoria Bryan')}
           ${row('fileText','Room scan troubleshooting','Article','Help Center, Copilot','Aug 9, 2026','Jordan Kim')}
           ${row('folder','Exam accommodation policy','Folder','AI Assist, Help Center','Aug 5, 2026','Victoria Bryan')}
           ${row('msgSquare','Standard greeting','Snippet','AI Assist, Copilot','Jul 30, 2026','Jordan Kim')}
           ${row('fileText','Extension conflict checklist','Article','Copilot','Jul 22, 2026','Victoria Bryan')}
+          <tr id="content-empty" style="display:none;"><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No content matches your search.</td></tr>
         </tbody>
       </table>
     </div>
@@ -129,7 +130,7 @@ function pageKnowledgeContent(){
 /* ---------- Knowledge: Articles ---------- */
 function pageKnowledgeArticles(){
   const row = (title, status, collection, views, updated) => `
-    <tr>
+    <tr data-title="${title.toLowerCase()}" data-status="${status}">
       <td class="strong">${title}</td>
       <td><span class="status-pill ${status==='Published'?'status-live':'status-notlive'}">${status}</span></td>
       <td>${collection}</td><td>${views}</td><td>${updated}</td>
@@ -141,41 +142,73 @@ function pageKnowledgeArticles(){
       <div class="topbar-actions"><button class="btn btn-primary">+ New article</button></div>
     </div>
   </div>
+  <div class="filter-row bordered">
+    ${searchField('articles-search','Search articles','onKnowledgeArticlesSearch')}
+  </div>
   <div class="tabs-row">
-    <div class="tab active">All articles</div>
-    <div class="tab">Published</div>
-    <div class="tab">Drafts</div>
+    <div class="tab active clickable" onclick="selectArticleTab(event,'All')">All articles</div>
+    <div class="tab clickable" onclick="selectArticleTab(event,'Published')">Published</div>
+    <div class="tab clickable" onclick="selectArticleTab(event,'Draft')">Drafts</div>
   </div>
   <div class="scroll-body">
     <div class="card">
       <table>
         <thead><tr><th>Title</th><th>Status</th><th>Collection</th><th>Views (30d)</th><th>Last updated</th></tr></thead>
-        <tbody>
+        <tbody id="articles-tbody">
           ${row('What to do if the lockdown browser crashes','Published','Technical Issues','842','Aug 11, 2026')}
           ${row('Camera and microphone permissions guide','Published','Getting Started','611','Aug 9, 2026')}
           ${row('Room scan troubleshooting','Published','Technical Issues','505','Aug 6, 2026')}
           ${row('Requesting extended time accommodations','Draft','Policies','0','Aug 4, 2026')}
           ${row('Two-monitor exam setup requirements','Published','Getting Started','289','Jul 28, 2026')}
           ${row('Rescheduling a missed exam','Draft','Policies','0','Jul 20, 2026')}
+          <tr id="articles-empty" style="display:none;"><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No articles match your search.</td></tr>
         </tbody>
       </table>
     </div>
   </div>`;
 }
 
-/* ---------- Contacts: Administrators ---------- */
-function pageContactsAdministrators(){
-  const row = (key, seen, inst, signup, exams) => {
-    const p = PEOPLE[key];
+/* ---------- Contacts: People (All / Students / Instructors / Administrators) ---------- */
+const CONTACTS_BY_ROLE = {
+  student: ['jordan','maya','devon','aisha','ty'],
+  instructor: ['priya','robert','nina'],
+  admin: ['alex','victoria','jordank','dana'],
+};
+const CONTACT_META = {
+  jordan:   {seen:'2 hours ago',  inst:'Cascade State University', signup:'May 3, 2025',  stat:'6'},
+  maya:     {seen:'5 hours ago',  inst:'Cascade State University', signup:'Jan 14, 2025', stat:'9'},
+  devon:    {seen:'1 day ago',    inst:'Northfield College',       signup:'Sep 8, 2024',  stat:'4'},
+  aisha:    {seen:'3 days ago',   inst:'Cascade State University', signup:'Mar 22, 2025', stat:'11'},
+  ty:       {seen:'1 week ago',   inst:'Northfield College',       signup:'Oct 30, 2024', stat:'3'},
+  priya:    {seen:'6 hours ago',  inst:'Cascade State University', signup:'Aug 19, 2024', stat:'14'},
+  robert:   {seen:'2 days ago',   inst:'Northfield College',       signup:'Jul 1, 2024',  stat:'8'},
+  nina:     {seen:'4 days ago',   inst:'Cascade State University', signup:'Apr 11, 2025', stat:'5'},
+  alex:     {seen:'4 hours ago',  inst:'Cascade State University', signup:'Aug 2, 2025',  stat:'1,204'},
+  victoria: {seen:'1 day ago',    inst:'Cascade State University', signup:'Jun 14, 2025', stat:'860'},
+  jordank:  {seen:'3 days ago',   inst:'Northfield College',       signup:'Feb 3, 2025',  stat:'512'},
+  dana:     {seen:'2 weeks ago',  inst:'Northfield College',       signup:'Nov 19, 2024', stat:'298'},
+};
+const CONTACT_STAT_LABEL = {student:'Exams taken', instructor:'Exams proctored', admin:'Exams overseen'};
+const CONTACT_FILTER_ICON = {all:'users', student:'user', instructor:'userCheck', admin:'users'};
+function pageContactsPeople(roleKey){
+  const title = {all:'All contacts', student:'Students', instructor:'Instructors', admin:'Administrators'}[roleKey];
+  const keys = roleKey==='all'
+    ? [...CONTACTS_BY_ROLE.student, ...CONTACTS_BY_ROLE.instructor, ...CONTACTS_BY_ROLE.admin]
+    : CONTACTS_BY_ROLE[roleKey];
+  const showStatCol = roleKey!=='all';
+  const countLabel = roleKey==='all' ? 'contacts' : title.toLowerCase();
+  const row = (key) => {
+    const p = PEOPLE[key], m = CONTACT_META[key];
     return `<tr>
       <td><span style="display:flex;align-items:center;gap:10px;">${avatar(key,28)}<span class="strong">${p.name}</span></span></td>
-      <td>${roleBadge('admin')}</td><td>${seen}</td><td>${inst}</td><td>${signup}</td><td>${exams}</td>
+      <td>${roleBadge(p.role)}</td><td>${m.seen}</td><td>${m.inst}</td><td>${m.signup}</td>
+      ${showStatCol?`<td>${m.stat}</td>`:''}
     </tr>`;
   };
   return `
   <div class="topbar">
     <div class="topbar-row">
-      <div><h1>Administrators</h1></div>
+      <div><h1>${title}</h1></div>
       <div class="topbar-actions"><button class="btn">Learn &#8964;</button><button class="btn btn-primary">New contact &#8964;</button></div>
     </div>
   </div>
@@ -193,23 +226,18 @@ function pageContactsAdministrators(){
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn">${I('users',13)} Administrators</button>
+      <button class="btn">${I(CONTACT_FILTER_ICON[roleKey],13)} ${title}</button>
       <button class="btn">${I('calClock',13)} Last seen less than 30 days ago</button>
       <span class="link-line" style="margin:0;">+ Add filter</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-size:16px;font-weight:600;letter-spacing:-.02em;">6 administrators</h3>
+      <h3 style="font-size:16px;font-weight:600;letter-spacing:-.02em;">${keys.length} ${countLabel}</h3>
       <div style="display:flex;gap:8px;"><button class="btn">New message</button><button class="btn">Add tag</button><button class="btn">More &#8964;</button></div>
     </div>
     <div class="card">
       <table>
-        <thead><tr><th>Name</th><th>Role</th><th>Last seen</th><th>Institution</th><th>Signed up</th><th>Exams overseen</th></tr></thead>
-        <tbody>
-          ${row('alex','4 hours ago','Cascade State University','Aug 2, 2025','1,204')}
-          ${row('priya','1 day ago','Cascade State University','Jun 14, 2025','860')}
-          ${row('marcus','3 days ago','Northfield College','Feb 3, 2025','512')}
-          ${row('dana','2 weeks ago','Northfield College','Nov 19, 2024','298')}
-        </tbody>
+        <thead><tr><th>Name</th><th>Role</th><th>Last seen</th><th>Institution</th><th>Signed up</th>${showStatCol?`<th>${CONTACT_STAT_LABEL[roleKey]}</th>`:''}</tr></thead>
+        <tbody>${keys.map(row).join('')}</tbody>
       </table>
     </div>
   </div>`;
@@ -225,8 +253,8 @@ function pageReportsOverview(){
     </div>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search reports</button>
-    <button class="btn">All categories &#8964;</button>
+    ${searchField('overview-search','Search reports')}
+    ${reportFilterDropdown('overview-category','All categories',['Human Support','AI & Automation','Proctoring'])}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-4">
@@ -273,7 +301,7 @@ function pageReportsOverview(){
 /* ---------- Reports: All reports ---------- */
 function pageReportsAll(){
   const row = (icon, name, cat, type, viewed, author, page) => `
-    <tr class="clickable" data-page="${page}"><td class="strong"><span style="display:inline-flex;align-items:center;gap:8px;">${I(icon,16)}${name}</span></td>
+    <tr class="clickable" data-page="${page}" data-name="${name.replace(/&amp;/g,'&').toLowerCase()}" data-category="${cat.replace(/&amp;/g,'&')}"><td class="strong"><span style="display:inline-flex;align-items:center;gap:8px;">${I(icon,16)}${name}</span></td>
     <td>${cat}</td><td>${type}</td><td>${viewed}</td><td>${author}</td></tr>`;
   return `
   <div class="topbar">
@@ -282,14 +310,14 @@ function pageReportsAll(){
     </div>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search reports</button>
-    <button class="btn">All categories &#8964;</button>
+    ${searchField('all-reports-search','Search reports','onAllReportsSearch')}
+    ${reportFilterDropdown('all-reports-category','All categories',['Human Support','AI & Automation','Proctoring'],'selectAllReportsCategory')}
   </div>
   <div class="scroll-body">
     <div class="card">
       <table>
         <thead><tr><th>Report</th><th>Category</th><th>Type</th><th>Last viewed</th><th>Created by</th></tr></thead>
-        <tbody>
+        <tbody id="all-reports-tbody">
           ${row('msgSquare','Conversation topics','Human Support','Donut','Just now','Victoria Bryan','reports-topics')}
           ${row('bar','Overall volume growth','Human Support','Line','2 hours ago','Victoria Bryan','reports-overview')}
           ${row('users','New conversations by role','Human Support','Line','2 hours ago','Victoria Bryan','reports-conversations-by-role')}
@@ -302,6 +330,7 @@ function pageReportsAll(){
           ${row('puzzle','Extension violations detected','Proctoring','Bar','1 day ago','Jordan Kim','reports-extension-violations')}
           ${row('monitor','Screen share &amp; multi-monitor issues','Proctoring','Line','1 day ago','Jordan Kim','reports-screen-share')}
           ${row('check','Exam completion rate','Proctoring','Line','4 days ago','Jordan Kim','reports-exam-completion')}
+          <tr id="all-reports-empty" style="display:none;"><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No reports match your search.</td></tr>
         </tbody>
       </table>
     </div>
@@ -319,8 +348,8 @@ function pageReportsFlagged(){
     <p class="sub" style="margin-top:14px;">Use this report to monitor exam sessions flagged for manual integrity review.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All statuses</button>
+    ${searchField('flagged-search','Search sessions')}
+    ${reportFilterDropdown('flagged-status','All statuses',['Escalated','False positive','Pending review'])}
     <span class="filter-spacer"></span>
     <span class="filter-meta">Updated 3 minutes ago</span>
     <button class="btn btn-clickable" data-page="integrity-review">View flagged queue &rarr;</button>
@@ -366,10 +395,10 @@ function pageReportsRoomScan(){
     <p class="sub" style="margin-top:14px;">Track how often students fail the initial room scan before an exam can begin.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All institutions</button>
+    ${searchField('room-scan-search','Search sessions')}
+    ${reportFilterDropdown('room-scan-institution','All institutions',['Cascade State University','Northfield College'])}
     <span class="filter-spacer"></span>
-    <button class="btn">Compare to last period</button>
+    ${compareToggle()}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-3">
@@ -406,8 +435,8 @@ function pageReportsAiAssist(){
     </div>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search conversations</button>
-    <button class="btn">All outcomes</button>
+    ${searchField('ai-assist-search','Search conversations')}
+    ${reportFilterDropdown('ai-assist-outcome','All outcomes',['Resolved','Escalated','Abandoned'])}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-4">
@@ -469,8 +498,8 @@ function pageReportsTopics(){
     <p class="sub" style="margin-top:14px;">See what students, instructors, and administrators are asking for help with, grouped by topic.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search conversations</button>
-    <button class="btn">All categories &#8964;</button>
+    ${searchField('topics-search','Search conversations')}
+    ${reportFilterDropdown('topics-category','All categories',TOPIC_CATEGORIES.map(c=>c.label),'onTopicCategorySelect')}
     <span class="filter-spacer"></span>
     <span class="filter-meta">Updated 3 minutes ago</span>
   </div>
@@ -534,8 +563,8 @@ function pageReportsConversationsByRole(){
     <p class="sub" style="margin-top:14px;">See how new conversation volume breaks down by who's asking for help.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search conversations</button>
-    <button class="btn">All roles &#8964;</button>
+    ${searchField('by-role-search','Search conversations')}
+    ${reportFilterDropdown('by-role-role','All roles',['Student','Instructor','Administrator'])}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-3">
@@ -577,8 +606,8 @@ function pageReportsResponseTime(){
     <p class="sub" style="margin-top:14px;">Track how quickly conversations get a first reply, and whether that meets your response-time target.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search conversations</button>
-    <button class="btn">All roles &#8964;</button>
+    ${searchField('response-time-search','Search conversations')}
+    ${reportFilterDropdown('response-time-role','All roles',['Student','Instructor','Administrator'])}
     <span class="filter-spacer"></span>
     <span class="filter-meta">Updated 3 minutes ago</span>
   </div>
@@ -614,8 +643,8 @@ function pageReportsCsat(){
     <p class="sub" style="margin-top:14px;">See how satisfied students, instructors, and administrators are with the help they received.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search conversations</button>
-    <button class="btn">All roles &#8964;</button>
+    ${searchField('csat-search','Search conversations')}
+    ${reportFilterDropdown('csat-role','All roles',['Student','Instructor','Administrator'])}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-4">
@@ -660,10 +689,10 @@ function pageReportsLockdownBrowser(){
     <p class="sub" style="margin-top:14px;">Track lockdown browser stability during exams &mdash; crashes, forced closures, and recovery.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All institutions</button>
+    ${searchField('lockdown-search','Search sessions')}
+    ${reportFilterDropdown('lockdown-institution','All institutions',['Cascade State University','Northfield College'])}
     <span class="filter-spacer"></span>
-    <button class="btn">Compare to last period</button>
+    ${compareToggle()}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-3">
@@ -696,8 +725,8 @@ function pageReportsExtensionViolations(){
     <p class="sub" style="margin-top:14px;">Track browser extension conflicts and policy violations detected during proctored exams.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All institutions</button>
+    ${searchField('extension-search','Search sessions')}
+    ${reportFilterDropdown('extension-institution','All institutions',['Cascade State University','Northfield College'])}
     <span class="filter-spacer"></span>
     <span class="filter-meta">Updated 3 minutes ago</span>
   </div>
@@ -732,10 +761,10 @@ function pageReportsScreenShare(){
     <p class="sub" style="margin-top:14px;">Track screen share permission failures and multi-monitor detections during proctored exams.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All institutions</button>
+    ${searchField('screen-share-search','Search sessions')}
+    ${reportFilterDropdown('screen-share-institution','All institutions',['Cascade State University','Northfield College'])}
     <span class="filter-spacer"></span>
-    <button class="btn">Compare to last period</button>
+    ${compareToggle()}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-3">
@@ -768,10 +797,10 @@ function pageReportsExamCompletion(){
     <p class="sub" style="margin-top:14px;">Track how often proctored exam sessions complete without a technical or integrity interruption.</p>
   </div>
   <div class="filter-row bordered">
-    <button class="btn">${I('search',13)} Search sessions</button>
-    <button class="btn">All institutions</button>
+    ${searchField('exam-completion-search','Search sessions')}
+    ${reportFilterDropdown('exam-completion-institution','All institutions',['Cascade State University','Northfield College'])}
     <span class="filter-spacer"></span>
-    <button class="btn">Compare to last period</button>
+    ${compareToggle()}
   </div>
   <div class="scroll-body">
     <div class="stat-grid cols-3">
@@ -802,8 +831,8 @@ function pageReportsExamCompletion(){
 
 /* ---------- Settings: Home ---------- */
 function pageSettingsHome(){
-  const card = (icon,bg,title,desc,clickable) => `
-    <div class="settings-card${clickable?' clickable':''}"${clickable?` data-page="settings-general"`:''}>
+  const card = (icon,bg,title,desc,page) => `
+    <div class="settings-card clickable" data-page="${page}">
       <div class="settings-icon-bg" style="background:${bg};">${I(icon,20)}</div>
       <div><h4>${title}</h4><p>${desc}</p></div>
     </div>`;
@@ -813,27 +842,9 @@ function pageSettingsHome(){
     <div class="section-block">
       <h3>Workspace</h3>
       <div class="settings-grid">
-        ${card('list','var(--purple-bg)','General','Set workspace name, time zone, languages, and more.',true)}
-        ${card('users','var(--purple-bg)','Teammates','Manage or invite teammates and see all activity logs.')}
-        ${card('crown','var(--purple-bg)','Workspace owners','Manage who receives important service announcements.')}
-        ${card('clock','var(--purple-bg)','Office hours','Set your office hours to manage customer expectations.')}
-        ${card('shield','var(--purple-bg)','Security','Configure all security settings for your workspace and data.')}
-        ${card('globe','var(--purple-bg)','Multilingual','Set up and manage your multilingual settings.')}
-      </div>
-    </div>
-    <div class="section-block">
-      <h3>Subscription</h3>
-      <div class="settings-grid">
-        ${card('card','var(--green-bg2)','Billing','Manage your subscription and payment details.')}
-        ${card('bar','var(--green-bg2)','Usage','View your billed usage and set usage alerts and limits.')}
-      </div>
-    </div>
-    <div class="section-block">
-      <h3>Integrations</h3>
-      <div class="settings-grid">
-        ${card('grid','var(--pink-bg)','Canvas LMS','Connect your Canvas instance to sync rosters and exams.')}
-        ${card('monitor','var(--pink-bg)','Blackboard','Connect Blackboard Learn for course and exam data.')}
-        ${card('headset','var(--pink-bg)','Zendesk','Sync support tickets and articles from Zendesk.')}
+        ${card('list','var(--purple-bg)','General','Set workspace name, time zone, and defaults.','settings-general')}
+        ${card('globe','var(--purple-bg)','Institutions','Manage the institutions using this workspace.','settings-institutions')}
+        ${card('puzzle','var(--pink-bg)','Integrations','Connect Canvas, Zendesk, and other tools.','settings-integrations')}
       </div>
     </div>
   </div>`;
@@ -841,36 +852,95 @@ function pageSettingsHome(){
 
 /* ---------- Settings: General ---------- */
 function pageSettingsGeneral(){
+  const field = (label, key, readonly) => `<div class="form-field"><label>${label}</label>
+    <input class="form-input" value="${settingsFields[key]}" ${readonly?'readonly':`oninput="updateSettingsField(event,'${key}')"`}></div>`;
+  const toggle = (key) => `<div class="toggle ${settingsToggles[key]?'on':'off'} clickable" onclick="toggleSetting(event,'${key}')"><span class="toggle-knob"></span></div>`;
   return `
   <div class="topbar">
-    <div class="topbar-row"><h1>General</h1><button class="btn btn-primary">Save</button></div>
+    <div class="topbar-row"><h1>General</h1><button class="btn btn-primary btn-clickable" onclick="showHint('Settings saved')">Save</button></div>
   </div>
   <div class="scroll-body">
     <div class="field-group">
       <div class="field-label"><h4>Workspace name &amp; time zone</h4><p>The workspace time zone will affect time-dependent features across the proctoring workspace.</p></div>
       <div class="field-body">
-        <div class="form-field"><label>Name</label><div class="form-input">tbds</div></div>
-        <div class="form-field"><label>Customer-facing name</label><div class="form-input">The Proctoring Support</div></div>
-        <div class="form-field"><label>App ID</label><div class="form-input">yilng9t9</div></div>
-        <div class="form-field"><label>Time zone</label><div class="form-input">America/Los_Angeles</div></div>
-      </div>
-    </div>
-    <div class="field-group">
-      <div class="field-label"><h4>Institutions</h4><p>The proctoring treats all users as individuals, but this feature groups students, instructors, and administrators from the same institution together.</p>
-        <div class="link-line">${I('book',14)}How does the institutions feature work</div></div>
-      <div class="field-body">
-        <div class="toggle-row"><div class="toggle on"><span class="toggle-knob"></span></div>
-          <div class="toggle-text"><strong>Enable institution-related features</strong></div></div>
-        <div class="toggle-row"><div class="toggle off"><span class="toggle-knob"></span></div>
-          <div class="toggle-text"><strong>Prevent institution attribute updates on Messenger</strong>
-          <span>Enabling this will prevent tampering with the data. Workflows can still be used to collect attribute data from users.</span></div></div>
+        ${field('Name','name')}
+        ${field('Customer-facing name','customerName')}
+        ${field('App ID','appId',true)}
+        ${field('Time zone','timezone')}
       </div>
     </div>
     <div class="field-group">
       <div class="field-label"><h4>Test workspace</h4><p>Experiment with features and integrations in a risk-free environment before rolling changes out to your live workspace.</p></div>
       <div class="field-body">
-        <div class="toggle-row"><div class="toggle off"><span class="toggle-knob"></span></div>
+        <div class="toggle-row">${toggle('testWorkspace')}
           <div class="toggle-text"><strong>Enable test workspace</strong></div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Settings: Institutions ---------- */
+// Real data, not a mock table — grouped straight from the same CONTACT_META
+// Contacts already uses, so this can never drift out of sync with the People
+// counts the way the old hardcoded settings copy did.
+function pageSettingsInstitutions(){
+  const counts = {};
+  Object.keys(CONTACT_META).forEach(key => {
+    const inst = CONTACT_META[key].inst;
+    counts[inst] = (counts[inst]||0) + 1;
+  });
+  const toggle = (key) => `<div class="toggle ${settingsToggles[key]?'on':'off'} clickable" onclick="toggleSetting(event,'${key}')"><span class="toggle-knob"></span></div>`;
+  return `
+  <div class="topbar">
+    <div class="topbar-row"><h1>Institutions</h1><button class="btn btn-primary btn-clickable" onclick="showHint('Settings saved')">Save</button></div>
+  </div>
+  <div class="scroll-body">
+    <div class="field-group">
+      <div class="field-label"><h4>Institution grouping</h4><p>The proctoring treats all users as individuals, but this feature groups students, instructors, and administrators from the same institution together.</p></div>
+      <div class="field-body">
+        <div class="toggle-row">${toggle('institutionFeatures')}
+          <div class="toggle-text"><strong>Enable institution-related features</strong></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Institution</th><th>Contacts</th></tr></thead>
+        <tbody>
+          ${Object.keys(counts).map(inst=>`<tr><td class="strong">${inst}</td><td>${counts[inst]}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ---------- Settings: Integrations ---------- */
+// Only the two integrations that actually mean something elsewhere in the
+// app: Canvas is what powers the Exam/Course fields already shown in every
+// conversation's Environment panel, and Zendesk is the same "Not set up"
+// source already listed on Knowledge > Sources. No Blackboard card — nothing
+// else in the app ever references it, so it had no reason to exist here.
+function pageSettingsIntegrations(){
+  return `
+  <div class="topbar"><h1>Integrations</h1></div>
+  <div class="scroll-body">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div class="source-card">
+        <div class="source-thumb" style="background:#fff;border-bottom:1px solid var(--border);">${Ilms('canvas',40)}</div>
+        <div class="source-body">
+          <div class="source-title-row"><strong>Canvas LMS</strong><span class="status-pill status-live">Connected</span></div>
+          <p class="source-desc">Powers the exam and course details shown in each conversation's Environment panel.</p>
+          <button class="btn btn-clickable" onclick="showHint('This is a prototype — integration settings aren’t wired up yet')">Manage</button>
+        </div>
+      </div>
+      <div class="source-card">
+        <div class="source-thumb" style="background:#fff;border-bottom:1px solid var(--border);">
+          <div class="service-mark" style="background:#03363d;width:40px;height:40px;font-size:16px;border-radius:8px;">Z</div>
+        </div>
+        <div class="source-body">
+          <div class="source-title-row"><strong>Zendesk</strong><span class="status-pill status-notlive">Not connected</span></div>
+          <p class="source-desc">Sync support tickets and Help Center articles into your knowledge sources.</p>
+          <button class="btn btn-clickable" onclick="showHint('This is a prototype — integration settings aren’t wired up yet')">Connect</button>
+        </div>
       </div>
     </div>
   </div>`;

@@ -106,3 +106,16 @@ const SORT_LABELS = {'last-activity':'Last activity', 'date-started':'Date start
 let inboxStatusFilter = 'open';
 let inboxSortBy = 'last-activity';
 
+/* Settings: module-level so edits survive renderShell() — genuinely local
+   state (toggled/typed for real), just never sent anywhere. */
+let settingsFields = {
+  name: 'The Proctoring',
+  customerName: 'The Proctoring Support',
+  appId: 'yilng9t9',
+  timezone: 'America/Los_Angeles',
+};
+let settingsToggles = {
+  institutionFeatures: true,
+  testWorkspace: false,
+};
+

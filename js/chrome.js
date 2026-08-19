@@ -7,7 +7,13 @@ const COMMAND_TEXTS = {
 };
 const PEOPLE = {
   jordan:  {initials:'JL', color:'#cd4c15', bg:'#fae0d1', name:'Jordan Lee', role:'student'},
+  maya:    {initials:'MC', color:'#0f766e', bg:'#ccfbf1', name:'Maya Chen', role:'student'},
+  devon:   {initials:'DB', color:'#4338ca', bg:'#e0e7ff', name:'Devon Brooks', role:'student'},
+  aisha:   {initials:'AP', color:'#c026d3', bg:'#fae8ff', name:'Aisha Patel', role:'student'},
+  ty:      {initials:'TF', color:'#0891b2', bg:'#cffafe', name:'Ty Fischer', role:'student'},
   priya:   {initials:'PN', color:'#1d4ed8', bg:'#dbeafe', name:'Priya Nair', role:'instructor'},
+  robert:  {initials:'RK', color:'#4d7c0f', bg:'#ecfccb', name:'Robert Klein', role:'instructor'},
+  nina:    {initials:'NA', color:'#c2410c', bg:'#ffedd5', name:'Nina Alvarez', role:'instructor'},
   marcus:  {initials:'MW', color:'#0c0a09', bg:'#e8e4e3', name:'Marcus Webb', role:'unknown'},
   alex:    {initials:'AR', color:'#92400e', bg:'#fef3c7', name:'Alex Rivera', role:'admin'},
   dana:    {initials:'DO', color:'#166534', bg:'#dcfce7', name:'Dana Ortiz', role:'admin'},
@@ -89,7 +95,7 @@ function reportsNav(active){
     </li>`;
   };
   return `<div class="secondary-nav">
-    <div class="secondary-nav-header"><h2>Reports</h2><button class="icon-btn-circle">${I('plus',14)}</button></div>
+    <div class="secondary-nav-header"><h2>Reports</h2></div>
     <ul class="nav-list">
       <li>${item('reports-overview','Overview','grid')}</li>
       <li>${item('reports-all','All reports','bar',31)}</li>
@@ -116,15 +122,16 @@ function reportsNav(active){
   </div>`;
 }
 
-function contactsNav(){
+function contactsNav(active){
+  const item = (key,label,count) => `<button class="nav-child clickable${active===key?' active':''}" data-page="${key}">${label}<span class="count">${count}</span></button>`;
   return `<div class="secondary-nav">
     <div class="secondary-nav-header"><h2>Contacts</h2>${I('sliders',18)}</div>
     <ul class="nav-list">
       <li class="nav-group-label">People${I('chevronRight',10)}</li>
-      <li><span class="nav-child">All contacts<span class="count">46</span></span></li>
-      <li><span class="nav-child">Students<span class="count">31</span></span></li>
-      <li><span class="nav-child">Instructors<span class="count">9</span></span></li>
-      <li><span class="nav-child active">Administrators<span class="count">6</span></span></li>
+      <li>${item('contacts-all','All contacts',12)}</li>
+      <li>${item('contacts-students','Students',5)}</li>
+      <li>${item('contacts-instructors','Instructors',3)}</li>
+      <li>${item('contacts-administrators','Administrators',4)}</li>
       <li class="nav-section-gap"></li>
       <li class="nav-group-label">Institutions${I('chevronRight',10)}</li>
       <li class="nav-section-gap"></li>
@@ -134,41 +141,68 @@ function contactsNav(){
 }
 
 function settingsNav(active){
-  if(active==='general'){
-    const item = (label,active2) => `<span class="nav-child${active2?' active':''}">${label}</span>`;
-    return `<div class="secondary-nav">
-      <div class="secondary-nav-header"><h2>Settings</h2></div>
-      <ul class="nav-list">
-        <li><button class="nav-item clickable" data-page="settings-home">Home</button></li>
-        <li><span class="nav-item">Workspace${I('chevronRight',10)}</span></li>
-        ${item('General',true)}
-        ${item('Teammates')}
-        ${item('Workspace owners')}
-        ${item('Office hours')}
-        ${item('Security')}
-        ${item('Multilingual')}
-        <li><span class="nav-item">Subscription${I('chevronRight',10)}</span></li>
-        <li><span class="nav-item">Institutions${I('chevronRight',10)}</span></li>
-        <li><span class="nav-item">Personal${I('chevronRight',10)}</span></li>
-      </ul>
-    </div>`;
-  }
+  // Flat, four real destinations — no accordion, no decorative chevrons on
+  // dead ends. Every item here goes somewhere (see the whole-dashboard audit
+  // this replaced: the old version had 1 real page and 10 that led nowhere).
+  const item = (key,label,icon) => `<button class="nav-item clickable${active===key?' active':''}" data-page="${key}">
+      <span class="left">${I(icon,18)}<span>${label}</span></span></button>`;
   return `<div class="secondary-nav">
     <div class="secondary-nav-header"><h2>Settings</h2></div>
     <ul class="nav-list">
-      <li><button class="nav-item clickable active" data-page="settings-home">Home</button></li>
-      <li><span class="nav-item">Workspace${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Subscription${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Channels${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Inbox${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">AI &amp; Automation${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Integrations${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Data &amp; Privacy${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Help Center${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Institutions${I('chevronRight',10)}</span></li>
-      <li><span class="nav-item">Personal${I('chevronRight',10)}</span></li>
+      <li>${item('settings-home','Home','grid')}</li>
+      <li>${item('settings-general','General','list')}</li>
+      <li>${item('settings-institutions','Institutions','globe')}</li>
+      <li>${item('settings-integrations','Integrations','puzzle')}</li>
     </ul>
   </div>`;
+}
+
+/* ---------------- report filter/search controls ---------------- */
+// Shared across every Reports page. Two flavors:
+//  - searchField(): a real <input>, styled to match the old placeholder
+//    button. Live-filters as you type if given a handler, otherwise just
+//    confirms on Enter (see the branches inside it).
+//  - reportFilterDropdown(): a real open/close menu with checkable options,
+//    calling the named handler as (event, value) on selection.
+// Neither has backing data to filter on most report pages (they're
+// summary/stat pages, not itemized lists), so the default handlers just
+// confirm the interaction via the same "prototype" hint the inbox's own
+// filter/sort controls already use. All Reports and Conversation Topics DO
+// have real underlying data, so those two pages pass their own handler
+// names (onAllReportsSearch/onTopicCategorySelect) that actually filter.
+function searchField(id, placeholder, liveHandlerFn){
+  // With a live handler (real underlying data to filter): fires on every
+  // keystroke, Escape clears. Without one (most report pages have nothing
+  // to filter): only Enter fires, and it just confirms via showHint — same
+  // idiom as the inbox's own onConvoSearchKeydown.
+  if(liveHandlerFn){
+    return `<div class="btn search-field">
+      ${I('search',13)}
+      <input type="text" id="${id}" placeholder="${placeholder}"
+        oninput="${liveHandlerFn}(event)"
+        onkeydown="if(event.key==='Escape'){event.currentTarget.value='';event.currentTarget.blur();${liveHandlerFn}(event);}">
+    </div>`;
+  }
+  return `<div class="btn search-field">
+    ${I('search',13)}
+    <input type="text" id="${id}" placeholder="${placeholder}" onkeydown="onReportSearchKeydown(event)">
+  </div>`;
+}
+function reportFilterDropdown(id, defaultLabel, options, handlerFn){
+  const fn = handlerFn || 'selectReportFilter';
+  const item = (label, active) => `<button class="menu-check-item${active?' active':''}" onclick="${fn}(event,'${id}','${label.replace(/'/g,"&#39;")}')">${label}<span class="check">${I('check',14)}</span></button>`;
+  return `<div class="filter-tab-wrap">
+    <button class="btn btn-clickable" data-filter-toggle="${id}" onclick="toggleReportFilter(event,'${id}')">
+      <span class="filter-tab-label" id="${id}-label">${defaultLabel}</span>${I('chevronDown',10)}
+    </button>
+    <div id="${id}" class="filter-menu report-filter-menu">
+      ${item(defaultLabel, true)}
+      ${options.map(opt=>item(opt,false)).join('')}
+    </div>
+  </div>`;
+}
+function compareToggle(){
+  return `<button class="btn btn-clickable" onclick="toggleCompareRow(event)">${I('arrowUpRight',13)} Compare to last period</button>`;
 }
 
 /* ---------------- skeleton loading state ---------------- */

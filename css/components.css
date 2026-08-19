@@ -8,6 +8,7 @@
   .btn-clickable{cursor:pointer;}
   .btn-clickable:hover{filter:brightness(0.96);}
   .btn-primary.btn-clickable:hover{filter:brightness(1.1);}
+  .btn.active{background:var(--sel);}
 
   /* Bands inside the card are transparent; the card is the only white surface. */
   .filter-row{display:flex;align-items:center;gap:8px;padding:8px 24px 14px;background:transparent;flex:0 0 auto;}
@@ -17,6 +18,13 @@
   /* Filter/search chips are lighter than action pills so the two don't compete. */
   .filter-row .btn{background:var(--pill);}
   .filter-row .btn.btn-primary{background:var(--red);}
+
+  /* Search field: a real <input> dressed as the same pill the rest of the
+     filter row uses, so it doesn't stand out as the one different control. */
+  .search-field{padding:8px 12px;cursor:text;}
+  .search-field input{border:none;background:transparent;outline:none;font:inherit;color:var(--text);
+    width:150px;padding:0;}
+  .search-field input::placeholder{color:var(--muted);}
 
   .scroll-body{padding:24px;display:flex;flex-direction:column;gap:20px;flex:1;overflow-y:auto;}
   /* overflow:hidden on .card gives it an automatic flex min-size of 0, so
@@ -170,12 +178,18 @@
   .field-group .field-label p{font-size:14px;color:var(--muted);}
   .field-group .field-body{flex:1;display:flex;flex-direction:column;gap:16px;min-width:0;}
   .form-field label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;}
-  .form-input{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);}
+  .form-input{width:100%;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px;
+    font-size:14px;font-family:inherit;color:var(--text);outline:none;}
+  .form-input:focus{border-color:var(--muted3);}
+  .form-input[readonly]{background:var(--surface-nested);color:var(--muted);cursor:default;}
   .toggle-row{display:flex;gap:12px;align-items:flex-start;}
-  .toggle{width:36px;height:20px;border-radius:999px;flex:0 0 auto;position:relative;margin-top:0;}
+  .toggle{width:36px;height:20px;border-radius:999px;flex:0 0 auto;position:relative;margin-top:0;
+    transition:background .15s ease;}
+  .toggle.clickable{cursor:pointer;}
   .toggle.on{background:#d96626;}
   .toggle.off{background:#778ba6;}
-  .toggle-knob{position:absolute;top:2px;width:16px;height:16px;border-radius:999px;background:#fff;}
+  .toggle-knob{position:absolute;top:2px;width:16px;height:16px;border-radius:999px;background:#fff;
+    transition:left .15s ease;}
   .toggle.on .toggle-knob{left:18px;}
   .toggle.off .toggle-knob{left:2px;}
   .toggle-text strong{display:block;font-size:14px;font-weight:500;}
@@ -214,6 +228,8 @@
   /* Black underline, not red — matches the same Segmented Tab used for the
      context panel's User/History/Resources (.side-tab.active) per spec. */
   .tab.active{color:var(--text);border-color:var(--text);font-weight:600;}
+  .tab.clickable{cursor:pointer;}
+  .tab.clickable:hover{color:var(--text);}
 
   .segment-row{display:flex;gap:4px;background:var(--pill);border-radius:999px;padding:2px;width:fit-content;}
   .segment-pill{padding:6px 12px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);cursor:default;}

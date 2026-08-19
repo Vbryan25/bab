@@ -17,12 +17,17 @@ const PAGES = {
   'reports-screen-share':     {sidenav:'reports',    secondary:()=>reportsNav('reports-screen-share'), content:pageReportsScreenShare},
   'reports-exam-completion':  {sidenav:'reports',    secondary:()=>reportsNav('reports-exam-completion'), content:pageReportsExamCompletion},
   'reports-ai-assist':        {sidenav:'reports',    secondary:()=>reportsNav('reports-ai-assist'),content:pageReportsAiAssist},
-  'contacts-administrators':  {sidenav:'contacts',   secondary:contactsNav,                       content:pageContactsAdministrators},
-  'settings-home':            {sidenav:'settings',   secondary:()=>settingsNav('home'),           content:pageSettingsHome},
-  'settings-general':         {sidenav:'settings',   secondary:()=>settingsNav('general'),        content:pageSettingsGeneral},
+  'contacts-all':             {sidenav:'contacts',   secondary:()=>contactsNav('contacts-all'),         content:()=>pageContactsPeople('all')},
+  'contacts-students':        {sidenav:'contacts',   secondary:()=>contactsNav('contacts-students'),    content:()=>pageContactsPeople('student')},
+  'contacts-instructors':     {sidenav:'contacts',   secondary:()=>contactsNav('contacts-instructors'), content:()=>pageContactsPeople('instructor')},
+  'contacts-administrators':  {sidenav:'contacts',   secondary:()=>contactsNav('contacts-administrators'), content:()=>pageContactsPeople('admin')},
+  'settings-home':            {sidenav:'settings',   secondary:()=>settingsNav('settings-home'),  content:pageSettingsHome},
+  'settings-general':         {sidenav:'settings',   secondary:()=>settingsNav('settings-general'),content:pageSettingsGeneral},
+  'settings-institutions':    {sidenav:'settings',   secondary:()=>settingsNav('settings-institutions'), content:pageSettingsInstitutions},
+  'settings-integrations':    {sidenav:'settings',   secondary:()=>settingsNav('settings-integrations'), content:pageSettingsIntegrations},
   'integrity-review':         {sidenav:null,         secondary:null,                              content:pageIntegrityReview},
 };
-const DEFAULT_FOR_ICON = {inbox:'inbox', knowledge:'knowledge-sources', reports:'reports-overview', contacts:'contacts-administrators', settings:'settings-home'};
+const DEFAULT_FOR_ICON = {inbox:'inbox', knowledge:'knowledge-sources', reports:'reports-overview', contacts:'contacts-all', settings:'settings-home'};
 
 function renderShell(key){
   const cfg = PAGES[key];
@@ -111,6 +116,12 @@ document.addEventListener('click', function(e){
     const isToggle = e.target.closest('[data-role="sort"]');
     if(!within && !isToggle) sortMenu.classList.remove('open');
   }
+  // click-away closes any open report filter dropdown (Reports pages)
+  document.querySelectorAll('.report-filter-menu.open').forEach(function(menu){
+    const within = e.target.closest('#'+menu.id);
+    const isToggle = e.target.closest('[data-filter-toggle="'+menu.id+'"]');
+    if(!within && !isToggle) menu.classList.remove('open');
+  });
   // click-away closes the search field, but only if it's still empty —
   // don't discard a query the user is mid-typing.
   const searchWrap = document.getElementById('convo-search-wrap');
@@ -553,6 +564,170 @@ function showHint(msg){
   toast.classList.add('show');
   clearTimeout(hintTimer);
   hintTimer = setTimeout(()=>toast.classList.remove('show'), 2200);
+}
+
+/* ---------------- Settings > General ---------------- */
+// Real local state (see settingsFields/settingsToggles in icons.js) — edits
+// and toggles genuinely stick for the session, they just never leave the browser.
+function updateSettingsField(e, key){ settingsFields[key] = e.currentTarget.value; }
+function toggleSetting(e, key){
+  settingsToggles[key] = !settingsToggles[key];
+  e.currentTarget.classList.toggle('on', settingsToggles[key]);
+  e.currentTarget.classList.toggle('off', !settingsToggles[key]);
+}
+
+/* ---------------- report filter/search controls ---------------- */
+// Generic handlers for searchField()/reportFilterDropdown() (js/chrome.js).
+// Report pages are mostly stat/chart summaries with nothing underneath to
+// actually filter, so the default path here just confirms the interaction
+// — same idiom as the inbox's own selectFilter/selectSort. All Reports and
+// Conversation Topics pass their own handlers instead (below) since they
+// have real underlying data.
+function onReportSearchKeydown(e){
+  if(e.key === 'Escape'){
+    e.currentTarget.value = '';
+    e.currentTarget.blur();
+  } else if(e.key === 'Enter' && e.currentTarget.value.trim()){
+    showHint('This is a prototype — search isn’t wired up yet');
+  }
+}
+function toggleReportFilter(e, id){
+  e.stopPropagation();
+  document.querySelectorAll('.report-filter-menu.open').forEach(function(m){
+    if(m.id !== id) m.classList.remove('open');
+  });
+  const menu = document.getElementById(id);
+  if(menu) menu.classList.toggle('open');
+}
+function closeReportFilters(){
+  document.querySelectorAll('.report-filter-menu.open').forEach(function(m){ m.classList.remove('open'); });
+}
+function selectReportFilter(e, id, value){
+  e.stopPropagation();
+  const label = document.getElementById(id+'-label');
+  if(label) label.textContent = value;
+  const menu = document.getElementById(id);
+  if(menu){
+    menu.querySelectorAll('.menu-check-item').forEach(function(item){
+      item.classList.toggle('active', item.textContent.trim()===value);
+    });
+    menu.classList.remove('open');
+  }
+  showHint('This is a prototype — filtering isn’t wired up yet');
+}
+// "Compare to last period" toggles the delta badges already sitting in the
+// page's stat tiles — the one report-page control with real data to act on
+// without fabricating anything new.
+function toggleCompareRow(e){
+  const btn = e.currentTarget;
+  const on = btn.classList.toggle('active');
+  const grid = document.querySelector('.scroll-body .stat-grid');
+  if(grid) grid.querySelectorAll('.stat-delta').forEach(function(el){ el.style.display = on ? 'none' : ''; });
+}
+
+/* All Reports: search + category actually filter the table. */
+function filterAllReportsTable(){
+  const q = (document.getElementById('all-reports-search')||{}).value?.trim().toLowerCase() || '';
+  const cat = window.allReportsCategory || 'All categories';
+  const rows = document.querySelectorAll('#all-reports-tbody tr[data-name]');
+  let visible = 0;
+  rows.forEach(function(tr){
+    const matchesQ = !q || (tr.dataset.name||'').includes(q);
+    const matchesCat = cat === 'All categories' || tr.dataset.category === cat;
+    const show = matchesQ && matchesCat;
+    tr.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const empty = document.getElementById('all-reports-empty');
+  if(empty) empty.style.display = visible ? 'none' : '';
+}
+function onAllReportsSearch(e){ filterAllReportsTable(); }
+function selectAllReportsCategory(e, id, value){
+  e.stopPropagation();
+  window.allReportsCategory = value;
+  const label = document.getElementById(id+'-label');
+  if(label) label.textContent = value;
+  const menu = document.getElementById(id);
+  if(menu){
+    menu.querySelectorAll('.menu-check-item').forEach(function(item){
+      item.classList.toggle('active', item.textContent.trim()===value);
+    });
+    menu.classList.remove('open');
+  }
+  filterAllReportsTable();
+}
+
+/* Conversation Topics: category filter selects the matching theme tab. */
+function onTopicCategorySelect(e, id, value){
+  e.stopPropagation();
+  const label = document.getElementById(id+'-label');
+  if(label) label.textContent = value;
+  const menu = document.getElementById(id);
+  if(menu){
+    menu.querySelectorAll('.menu-check-item').forEach(function(item){
+      item.classList.toggle('active', item.textContent.trim()===value);
+    });
+    menu.classList.remove('open');
+  }
+  if(value === 'All categories') return;
+  const tab = [...document.querySelectorAll('.segment-pill[data-topic]')].find(function(el){ return el.textContent.trim()===value; });
+  if(tab){ tab.click(); tab.scrollIntoView({block:'nearest', inline:'center'}); }
+}
+
+/* Knowledge > Content: search + type actually filter the table. */
+function filterKnowledgeContentTable(){
+  const q = (document.getElementById('content-search')||{}).value?.trim().toLowerCase() || '';
+  const type = window.knowledgeContentType || 'All types';
+  const rows = document.querySelectorAll('#content-tbody tr[data-name]');
+  let visible = 0;
+  rows.forEach(function(tr){
+    const matchesQ = !q || (tr.dataset.name||'').includes(q);
+    const matchesType = type === 'All types' || tr.dataset.type === type;
+    const show = matchesQ && matchesType;
+    tr.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const empty = document.getElementById('content-empty');
+  if(empty) empty.style.display = visible ? 'none' : '';
+}
+function onKnowledgeContentSearch(e){ filterKnowledgeContentTable(); }
+function selectContentType(e, id, value){
+  e.stopPropagation();
+  window.knowledgeContentType = value;
+  const label = document.getElementById(id+'-label');
+  if(label) label.textContent = value;
+  const menu = document.getElementById(id);
+  if(menu){
+    menu.querySelectorAll('.menu-check-item').forEach(function(item){
+      item.classList.toggle('active', item.textContent.trim()===value);
+    });
+    menu.classList.remove('open');
+  }
+  filterKnowledgeContentTable();
+}
+
+/* Knowledge > Articles: search + status tabs actually filter the table. */
+function filterKnowledgeArticlesTable(){
+  const q = (document.getElementById('articles-search')||{}).value?.trim().toLowerCase() || '';
+  const status = window.knowledgeArticleStatus || 'All';
+  const rows = document.querySelectorAll('#articles-tbody tr[data-title]');
+  let visible = 0;
+  rows.forEach(function(tr){
+    const matchesQ = !q || (tr.dataset.title||'').includes(q);
+    const matchesStatus = status === 'All' || tr.dataset.status === status;
+    const show = matchesQ && matchesStatus;
+    tr.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const empty = document.getElementById('articles-empty');
+  if(empty) empty.style.display = visible ? 'none' : '';
+}
+function onKnowledgeArticlesSearch(e){ filterKnowledgeArticlesTable(); }
+function selectArticleTab(e, status){
+  window.knowledgeArticleStatus = status;
+  document.querySelectorAll('.tabs-row .tab').forEach(function(t){ t.classList.remove('active'); });
+  e.currentTarget.classList.add('active');
+  filterKnowledgeArticlesTable();
 }
 
 /* ---------------- chart hover tooltip ---------------- */
