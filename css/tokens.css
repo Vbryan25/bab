@@ -38,6 +38,22 @@
     --series-admin:var(--green);
     --bar-idle:#b8aca5; /* warm neutral, in step with --muted/--border rather than a cool grey */
     --bar-alert:var(--red-text);
+    /* Topic-category palette — Conversation Topics report only. Deliberately
+       distinct hues from --series-*, which already carry role meaning
+       (orange=student/blue=instructor/green=admin) on the Overview chart;
+       reusing them here for a different categorical axis would overload
+       that meaning. Validated all-pairs via the dataviz skill's
+       validate_palette.js against --surface-nested (the chart-card
+       background this palette actually renders on) — full pass, with two
+       WARN-tier items (light-pink contrast, violet/blue CVD proximity)
+       covered by the direct-label legend + hover tooltip this report
+       always shows alongside color. */
+    --topic-1:#7c3aed; /* Lockdown browser */
+    --topic-2:#9d174d; /* Camera & room scan */
+    --topic-3:#0d9488; /* Browser extension conflicts */
+    --topic-4:#a16207; /* Screen share / multi-monitor */
+    --topic-5:#3b82f6; /* Exam access */
+    --topic-6:#f472b6; /* Scheduling & accommodations */
     --sent-bubble:#f0dfdb; /* agent's own messages: warm, not saturated green */
     --send-btn:#403e3f;
     --red-text:#e7000b;

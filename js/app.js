@@ -6,8 +6,16 @@ const PAGES = {
   'knowledge-articles':       {sidenav:'knowledge',  secondary:()=>knowledgeNav('knowledge-articles'),content:pageKnowledgeArticles},
   'reports-overview':         {sidenav:'reports',    secondary:()=>reportsNav('reports-overview'),content:pageReportsOverview},
   'reports-all':              {sidenav:'reports',    secondary:()=>reportsNav('reports-all'),     content:pageReportsAll},
+  'reports-topics':           {sidenav:'reports',    secondary:()=>reportsNav('reports-topics'),  content:pageReportsTopics},
+  'reports-conversations-by-role': {sidenav:'reports', secondary:()=>reportsNav('reports-conversations-by-role'), content:pageReportsConversationsByRole},
+  'reports-response-time':    {sidenav:'reports',    secondary:()=>reportsNav('reports-response-time'), content:pageReportsResponseTime},
+  'reports-csat':             {sidenav:'reports',    secondary:()=>reportsNav('reports-csat'),    content:pageReportsCsat},
   'reports-flagged-sessions': {sidenav:'reports',    secondary:()=>reportsNav('reports-flagged-sessions'),content:pageReportsFlagged},
   'reports-room-scan':        {sidenav:'reports',    secondary:()=>reportsNav('reports-room-scan'),content:pageReportsRoomScan},
+  'reports-lockdown-browser': {sidenav:'reports',    secondary:()=>reportsNav('reports-lockdown-browser'), content:pageReportsLockdownBrowser},
+  'reports-extension-violations': {sidenav:'reports', secondary:()=>reportsNav('reports-extension-violations'), content:pageReportsExtensionViolations},
+  'reports-screen-share':     {sidenav:'reports',    secondary:()=>reportsNav('reports-screen-share'), content:pageReportsScreenShare},
+  'reports-exam-completion':  {sidenav:'reports',    secondary:()=>reportsNav('reports-exam-completion'), content:pageReportsExamCompletion},
   'reports-ai-assist':        {sidenav:'reports',    secondary:()=>reportsNav('reports-ai-assist'),content:pageReportsAiAssist},
   'contacts-administrators':  {sidenav:'contacts',   secondary:contactsNav,                       content:pageContactsAdministrators},
   'settings-home':            {sidenav:'settings',   secondary:()=>settingsNav('home'),           content:pageSettingsHome},
@@ -230,6 +238,14 @@ function selectSideTab(e, key){
   document.querySelectorAll('.side-tab').forEach(el=>el.classList.remove('active'));
   e.currentTarget.classList.add('active');
   if(key !== 'user') showHint('This is a prototype — only the User tab has live data');
+}
+function selectTopicTab(e, key){
+  e.stopPropagation();
+  document.querySelectorAll('.segment-pill[data-topic]').forEach(el=>el.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.querySelectorAll('.topic-examples').forEach(el=>el.classList.remove('active'));
+  const panel = document.getElementById('topic-examples-'+key);
+  if(panel) panel.classList.add('active');
 }
 
 function toggleCommandMenu(e){

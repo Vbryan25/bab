@@ -7,54 +7,56 @@ function pageKnowledgeSources(){
     <div class="topbar-row">
       <div><h1>Sources</h1></div>
       <div class="topbar-actions">
-        <button class="btn">Import content</button>
-        <button class="btn">Sync sources</button>
-        <button class="btn btn-primary">+ Add source</button>
+        <button class="btn">Operator</button>
+        <button class="btn">Learn &#8964;</button>
+        <button class="btn btn-primary">+ New content</button>
       </div>
     </div>
   </div>
   <div class="tabs-row">
-    <div class="tab active">Sources</div>
-    <div class="tab">Content</div>
-    <div class="tab">Tags</div>
-    <div class="tab">Settings</div>
+    <div class="tab active">All sources</div>
+    <div class="tab">AI Agent</div>
+    <div class="tab">Copilot</div>
+    <div class="tab">Help Center</div>
   </div>
   <div class="scroll-body">
-    <div class="card" style="padding:24px;">
+    <div>
       <h3 style="font-size:16px;font-weight:600;letter-spacing:-.02em;margin-bottom:16px;">Optimize your content for AI Assist, Copilot, and Help Center</h3>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <div class="source-card">
-          <div class="source-thumb"></div>
+          <div class="source-thumb" style="background:#bfeacb;">
+            <span class="wordmark" style="font-size:22px;color:#2f7549;">BAB Help</span>
+          </div>
           <div class="source-body">
-            <div class="source-title-row"><strong>Articles</strong><span class="status-pill status-live">Live</span></div>
-            <p class="source-desc">Publish help-center style articles that AI Assist and Copilot can cite directly in conversation.</p>
-            <div class="link-line">Manage articles ${I('arrowUpRight',14)}</div>
+            <div class="source-title-row"><strong>Help Center</strong><span class="status-pill" style="background:#bfeacb;color:#2f7549;">Live</span></div>
+            <p class="source-desc">Students and instructors use your knowledge to find accurate answers themselves.</p>
+            <div class="link-line" style="color:var(--green);">Set up now ${I('arrowUpRight',14)}</div>
           </div>
         </div>
         <div class="source-card">
-          <div class="source-thumb" style="background:linear-gradient(135deg,#fae0d1,#f8dae5);"></div>
+          <div class="source-thumb" style="background:#bfe6ea;color:#0c4a6e;">${I('bot',40)}</div>
           <div class="source-body">
-            <div class="source-title-row"><strong>Snippets</strong><span class="status-pill status-notlive">Not live</span></div>
-            <p class="source-desc">Short, reusable canned responses your team and AI Assist can drop into a conversation.</p>
-            <div class="link-line">Set up snippets ${I('arrowUpRight',14)}</div>
+            <div class="source-title-row"><strong>AI Assist</strong><span class="status-pill" style="background:var(--unread);color:var(--muted);">Not live</span></div>
+            <p class="source-desc">AI Assist uses your knowledge to generate accurate answers for students, instructors, and administrators.</p>
+            <div class="link-line" style="color:var(--green);">Set up now ${I('arrowUpRight',14)}</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="section-block">
+    <div style="display:flex;flex-direction:column;gap:16px;">
       <div>
         <h3>Public articles</h3>
-        <p style="font-size:14px;color:var(--muted);margin-top:4px;">Let AI Assist and Copilot use public articles from your Help Center.</p>
+        <p style="font-size:13px;color:var(--muted);margin-top:4px;">Let AI Assist and Copilot use public articles from your Help Center.</p>
       </div>
-      <div class="card">
+      <div class="source-list">
         <div class="source-row">
           <div class="source-left">
             <span class="source-status-dot" style="background:var(--green-text);"></span>
-            <div class="avatar-circle" style="background:#e8e4e3;color:#0c0a09;">EH</div>
-            <strong>Help Center</strong>
+            <span class="wordmark" style="font-size:16px;">EH</span>
+            <strong>Company Help Center</strong>
           </div>
-          <span style="color:var(--green-text);font-size:13px;">Connected</span>
-          <button class="btn">Manage</button>
+          <span style="color:var(--muted);font-size:13px;">1 article</span>
+          <button class="btn">Add article</button>
         </div>
         <div style="height:1px;background:var(--border);"></div>
         <div class="source-row">
@@ -63,25 +65,25 @@ function pageKnowledgeSources(){
             <div class="service-mark" style="background:#03363d;">Z</div>
             <strong>Zendesk</strong>
           </div>
-          <span style="color:var(--green-text);font-size:13px;">Connected</span>
-          <button class="btn">Configure</button>
+          <span style="color:var(--muted);font-size:13px;">Not set up</span>
+          <button class="btn">Sync or Import</button>
         </div>
       </div>
     </div>
-    <div class="section-block">
+    <div style="display:flex;flex-direction:column;gap:16px;">
       <div>
         <h3>Internal articles</h3>
-        <p style="font-size:14px;color:var(--muted);margin-top:4px;">Give AI Assist and Copilot internal knowledge only available to you and your team.</p>
+        <p style="font-size:13px;color:var(--muted);margin-top:4px;">Give AI Assist and Copilot internal knowledge only available to you and your team.</p>
       </div>
-      <div class="card">
+      <div class="source-list">
         <div class="source-row">
           <div class="source-left">
-            <span class="source-status-dot" style="background:#e8e4e3;"></span>
-            <div class="avatar-circle" style="background:#e8e4e3;color:#0c0a09;">EH</div>
-            <strong>Internal knowledge base</strong>
+            <span class="source-status-dot" style="background:var(--green-text);"></span>
+            <div class="service-mark" style="background:#1f2e47;"></div>
+            <strong>Agent Runbooks</strong>
           </div>
-          <span style="color:var(--muted);font-size:13px;">Not connected</span>
-          <button class="btn">Connect</button>
+          <span style="color:var(--muted);font-size:13px;">1 article</span>
+          <button class="btn">Add article</button>
         </div>
       </div>
     </div>
@@ -189,13 +191,6 @@ function pageContactsAdministrators(){
           <div class="link-line">${I('arrowUpRight',16)}Visit our App Store</div>
         </div>
       </div>
-      <div class="preview-card">
-        <div class="cap">USER DATA</div>
-        <div class="preview-field"><span>Name</span><strong>Alex Rivera</strong></div>
-        <div class="preview-field"><span>Institution</span><strong>Cascade State University</strong></div>
-        <div class="preview-field"><span>Role</span><strong>Administrator</strong></div>
-        <div class="preview-field"><span>Exams overseen</span><strong>1,204</strong></div>
-      </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="btn">${I('users',13)} Administrators</button>
@@ -234,6 +229,17 @@ function pageReportsOverview(){
     <button class="btn">All categories &#8964;</button>
   </div>
   <div class="scroll-body">
+    <div class="stat-grid cols-4">
+      <div class="stat-tile highlight"><div class="stat-label">${I('msgSquare',14)}Total conversations this week</div>
+        <div class="stat-value-row"><span class="stat-value">24</span><span class="stat-delta up">${I('arrowUp',12)}+3</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('clock',14)}Median time to first response</div>
+        <div class="stat-value-row"><span class="stat-value">2.1 hrs</span><span class="stat-delta down">${I('arrowDown',12)}-0.2 hrs</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('target',14)}Flag precision</div>
+        <div class="stat-value-row"><span class="stat-value">77%</span></div>
+        <div class="stat-caption">See Flagged Sessions for detail</div></div>
+      <div class="stat-tile"><div class="stat-label">${I('userCheck',14)}Deflected by AI Assist</div>
+        <div class="stat-value-row"><span class="stat-value">68%</span><span class="stat-delta up">${I('arrowUp',12)}+4pt</span></div></div>
+    </div>
     <div class="card chart-card">
       <h3>Overall volume growth</h3>
       <div class="chart-wrap">
@@ -253,39 +259,21 @@ function pageReportsOverview(){
         <div class="legend-item"><span class="legend-dot" style="background:var(--series-admin);"></span>Administrator</div>
       </div>
     </div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;">
-      <div class="card chart-card" style="flex:1;min-width:320px;">
-        <h3>New conversations by role</h3>
-        <div class="chart-wrap">
-          <div class="chart-yaxis" style="height:160px;"><span>20</span><span>10</span><span>0</span></div>
-          <div class="chart-plot">${multiLineChart([
-            {data:[4,6,8,10,13,15,17,18],color:'var(--series-student)',name:'Student'},
-            {data:[2,3,3,4,5,5,6,7],color:'var(--series-instructor)',name:'Instructor'},
-            {data:[1,1,2,2,2,3,3,4],color:'var(--series-admin)',name:'Administrator'},
-          ],533,160,WEEKS.slice(-8))}</div>
-        </div>
-        <div class="chart-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:var(--series-student);"></span>Student</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--series-instructor);"></span>Instructor</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--series-admin);"></span>Administrator</div>
-        </div>
+    <div class="card chart-card">
+      <h3>Median time to first response, last 12 weeks</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:160px;"><span>3.5h</span><span>1.75h</span><span>0h</span></div>
+        <div class="chart-plot">${lineChart([3.4,3.2,3.1,2.9,2.8,2.9,2.6,2.5,2.4,2.2,2.3,2.1],1140,160,'var(--series-all)',WEEKS,'Median time to first response','hrs')}</div>
       </div>
-      <div class="card chart-card" style="flex:1;min-width:320px;">
-        <h3>Flagged sessions by week</h3>
-        <div class="chart-wrap">
-          <div class="chart-yaxis" style="height:160px;"><span>5</span><span>0</span></div>
-          <div class="chart-plot">${barChart([1,0,2,1,1,3,2,1,4,2,3,5],537,160,'var(--bar-idle)',5,'Flagged sessions',WEEKS)}</div>
-        </div>
-        <p style="font-size:12px;color:var(--muted);margin-top:10px;">12-week trend &middot; red = weeks above threshold (4+)</p>
-      </div>
+      ${xAxis(WEEKS)}
     </div>
   </div>`;
 }
 
 /* ---------- Reports: All reports ---------- */
 function pageReportsAll(){
-  const row = (icon, name, cat, type, viewed, author) => `
-    <tr><td class="strong"><span style="display:inline-flex;align-items:center;gap:8px;">${I(icon,16)}${name}</span></td>
+  const row = (icon, name, cat, type, viewed, author, page) => `
+    <tr class="clickable" data-page="${page}"><td class="strong"><span style="display:inline-flex;align-items:center;gap:8px;">${I(icon,16)}${name}</span></td>
     <td>${cat}</td><td>${type}</td><td>${viewed}</td><td>${author}</td></tr>`;
   return `
   <div class="topbar">
@@ -302,14 +290,18 @@ function pageReportsAll(){
       <table>
         <thead><tr><th>Report</th><th>Category</th><th>Type</th><th>Last viewed</th><th>Created by</th></tr></thead>
         <tbody>
-          ${row('bar','Overall volume growth','Human Support','Line','2 hours ago','Victoria Bryan')}
-          ${row('bar','New conversations by role','Human Support','Line','2 hours ago','Victoria Bryan')}
-          ${row('bar','Flagged sessions by week','Proctoring','Bar','3 hours ago','Victoria Bryan')}
-          ${row('bar','Room scan failure rate','Proctoring','Line','1 day ago','Jordan Kim')}
-          ${row('bar','Extension violations detected','Proctoring','Bar','1 day ago','Jordan Kim')}
-          ${row('bar','AI Assist deflection rate','AI &amp; Automation','Line','2 days ago','Victoria Bryan')}
-          ${row('bar','Median time to first response','Human Support','Line','3 days ago','Victoria Bryan')}
-          ${row('bar','Exam completion rate','Proctoring','Line','4 days ago','Jordan Kim')}
+          ${row('msgSquare','Conversation topics','Human Support','Donut','Just now','Victoria Bryan','reports-topics')}
+          ${row('bar','Overall volume growth','Human Support','Line','2 hours ago','Victoria Bryan','reports-overview')}
+          ${row('users','New conversations by role','Human Support','Line','2 hours ago','Victoria Bryan','reports-conversations-by-role')}
+          ${row('clock','Response time','Human Support','Line','2 hours ago','Victoria Bryan','reports-response-time')}
+          ${row('smile','Satisfaction (CSAT)','Human Support','Line','5 hours ago','Victoria Bryan','reports-csat')}
+          ${row('userCheck','AI Assist deflection rate','AI &amp; Automation','Line','2 days ago','Victoria Bryan','reports-ai-assist')}
+          ${row('flag','Flagged sessions by week','Proctoring','Bar','3 hours ago','Victoria Bryan','reports-flagged-sessions')}
+          ${row('camOff','Room scan failure rate','Proctoring','Line','1 day ago','Jordan Kim','reports-room-scan')}
+          ${row('monitor','Lockdown browser stability','Proctoring','Line','1 day ago','Jordan Kim','reports-lockdown-browser')}
+          ${row('puzzle','Extension violations detected','Proctoring','Bar','1 day ago','Jordan Kim','reports-extension-violations')}
+          ${row('monitor','Screen share &amp; multi-monitor issues','Proctoring','Line','1 day ago','Jordan Kim','reports-screen-share')}
+          ${row('check','Exam completion rate','Proctoring','Line','4 days ago','Jordan Kim','reports-exam-completion')}
         </tbody>
       </table>
     </div>
@@ -435,6 +427,375 @@ function pageReportsAiAssist(){
         <div class="chart-plot">${lineChart([38,36,34,33,31,30,29,27,26,24,23,22],1120,220,'var(--series-all)',WEEKS,'Time to human','%')}</div>
       </div>
       ${xAxis(WEEKS)}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Conversation Topics ---------- */
+function pageReportsTopics(){
+  const TOPIC_CATEGORIES = [
+    { key:'lockdown', label:'Lockdown browser', icon:'monitor', color:'var(--topic-1)',
+      weekly:[3,4,3,5,4,6,5,7,6,8,7,9],
+      examples:[ {role:'student', quote:'The lockdown browser closed mid-exam. What do I do?'},
+                 {role:'student', quote:'The lockdown browser closed mid-exam'} ] },
+    { key:'camera', label:'Camera & room scan', icon:'camOff', color:'var(--topic-2)',
+      weekly:[4,5,4,6,5,4,6,5,4,5,4,5], linkPage:'reports-room-scan',
+      examples:[ {role:'student', quote:'My camera permission keeps getting denied'} ] },
+    { key:'extension', label:'Browser extension conflicts', icon:'puzzle', color:'var(--topic-3)',
+      weekly:[2,3,2,4,3,5,4,6,5,7,6,8],
+      examples:[ {role:'student', quote:'The proctoring extension says it needs an update'},
+                 {role:'student', quote:"Extension update loop won't finish installing"} ] },
+    { key:'screenshare', label:'Screen share / multi-monitor', icon:'monitor', color:'var(--topic-4)',
+      weekly:[3,4,3,4,3,4,3,4,3,4,3,4],
+      examples:[ {role:'student', quote:'Screen recording permission keeps resetting'},
+                 {role:'unknown', quote:'My screen share stopped working mid-exam'},
+                 {role:'unknown', quote:'Do I need two monitors disconnected?'} ] },
+    { key:'access', label:'Exam access', icon:'appWindow', color:'var(--topic-5)',
+      weekly:[6,7,6,8,7,6,8,7,6,8,7,9],
+      examples:[ {role:'student', quote:'I keep getting a black screen after the proctoring loads'},
+                 {role:'unknown', quote:"Hi, I can't access my exam page"} ] },
+    { key:'scheduling', label:'Scheduling & accommodations', icon:'calClock', color:'var(--topic-6)',
+      weekly:[2,2,3,2,2,3,2,3,2,3,2,3],
+      examples:[ {role:'admin', quote:'Is there a way to reschedule my exam time'} ] },
+  ];
+  const total = c => c.weekly.reduce((s,v)=>s+v,0);
+  const top3 = TOPIC_CATEGORIES.slice().sort((a,b)=>total(b)-total(a)).slice(0,3);
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Conversation Topics</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">See what students, instructors, and administrators are asking for help with, grouped by topic.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search conversations</button>
+    <button class="btn">All categories &#8964;</button>
+    <span class="filter-spacer"></span>
+    <span class="filter-meta">Updated 3 minutes ago</span>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile highlight"><div class="stat-label">${I('msgSquare',14)}Top topic this week</div>
+        <div class="stat-value-row"><span class="stat-value">Exam access</span></div>
+        <div class="stat-caption">85 conversations &middot; 25% of total volume</div></div>
+      <div class="stat-tile"><div class="stat-label">${I('bar',14)}Total categorized conversations</div>
+        <div class="stat-value-row"><span class="stat-value">335</span><span class="stat-delta up">${I('arrowUp',12)}+11%</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('arrowUp',14)}Fastest-growing topic</div>
+        <div class="stat-value-row"><span class="stat-value">Browser extensions</span><span class="stat-delta up">${I('arrowUp',12)}+89%</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Conversations by topic</h3>
+      <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+        ${donutChart(TOPIC_CATEGORIES.map(c=>({value:total(c),color:c.color,name:c.label})),200,28,'Conversations')}
+        <div class="chart-legend" style="flex-direction:column;align-items:flex-start;gap:10px;">
+          ${TOPIC_CATEGORIES.map(c=>`<div class="legend-item"><span class="legend-dot" style="background:${c.color};"></span>${c.label}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card chart-card">
+      <h3>Topic volume, last 12 weeks</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:200px;"><span>9</span><span>4.5</span><span>0</span></div>
+        <div class="chart-plot">${multiLineChart(top3.map(c=>({data:c.weekly,color:c.color,name:c.label})),1140,200,WEEKS)}</div>
+      </div>
+      ${xAxis(WEEKS)}
+      <div class="chart-legend">
+        ${top3.map(c=>`<div class="legend-item"><span class="legend-dot" style="background:${c.color};"></span>${c.label}</div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h3>Themes with real examples</h3>
+      <div class="segment-row" style="margin-top:14px;">
+        ${TOPIC_CATEGORIES.map((c,i)=>`<span class="segment-pill clickable${i===0?' active':''}" data-topic="${c.key}" onclick="selectTopicTab(event,'${c.key}')">${c.label}</span>`).join('')}
+      </div>
+      ${TOPIC_CATEGORIES.map((c,i)=>`
+      <div class="topic-examples${i===0?' active':''}" id="topic-examples-${c.key}">
+        ${c.examples.map(ex=>`
+        <div class="example-card">
+          <div>${roleBadge(ex.role)}</div>
+          <div class="example-card-title">${c.label}</div>
+          <div class="example-card-quote">"${ex.quote}"</div>
+        </div>`).join('')}
+        ${c.linkPage?`<button class="btn btn-clickable" data-page="${c.linkPage}" style="flex-basis:100%;align-self:flex-start;">View Room Scan Failures report &rarr;</button>`:''}
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: New Conversations by Role ---------- */
+function pageReportsConversationsByRole(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>New Conversations by Role</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">See how new conversation volume breaks down by who's asking for help.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search conversations</button>
+    <button class="btn">All roles &#8964;</button>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile"><div class="stat-label">${I('user',14)}Student conversations</div>
+        <div class="stat-value-row"><span class="stat-value">13</span><span class="stat-delta up">${I('arrowUp',12)}+1</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('userCheck',14)}Instructor conversations</div>
+        <div class="stat-value-row"><span class="stat-value">7</span><span class="stat-delta up">${I('arrowUp',12)}+1</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('shield',14)}Administrator conversations</div>
+        <div class="stat-value-row"><span class="stat-value">3</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>New conversations by role, last 12 weeks</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:200px;"><span>15</span><span>7.5</span><span>0</span></div>
+        <div class="chart-plot">${multiLineChart([
+          {data:[5,6,6,6,7,7,8,9,10,11,12,13],color:'var(--series-student)',name:'Student'},
+          {data:[3,3,4,3,4,4,4,5,5,6,6,7],color:'var(--series-instructor)',name:'Instructor'},
+          {data:[1,1,1,2,1,2,2,2,2,3,3,3],color:'var(--series-admin)',name:'Administrator'},
+        ],1140,200,WEEKS)}</div>
+      </div>
+      ${xAxis(WEEKS)}
+      <div class="chart-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-student);"></span>Student</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-instructor);"></span>Instructor</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-admin);"></span>Administrator</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Response Time ---------- */
+function pageReportsResponseTime(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Response Time</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">Track how quickly conversations get a first reply, and whether that meets your response-time target.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search conversations</button>
+    <button class="btn">All roles &#8964;</button>
+    <span class="filter-spacer"></span>
+    <span class="filter-meta">Updated 3 minutes ago</span>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile highlight"><div class="stat-label">${I('clock',14)}Median time to first response</div>
+        <div class="stat-value-row"><span class="stat-value">2.1 hrs</span><span class="stat-delta down">${I('arrowDown',12)}-0.2 hrs</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('target',14)}SLA compliance</div>
+        <div class="stat-value-row"><span class="stat-value">92%</span><span class="stat-delta up">${I('arrowUp',12)}+3pt</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('hourglass',14)}Longest outstanding wait</div>
+        <div class="stat-value-row"><span class="stat-value">6.4 hrs</span></div></div>
+    </div>
+    <div class="footnote"><span class="f">&fnof;</span><span>Method: SLA target is 4 hours during business hours. Compliance = replies sent within target &divide; total conversations.</span></div>
+    <div class="card chart-card">
+      <h3>Median time to first response, last 12 weeks</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:200px;"><span>3.5h</span><span>1.75h</span><span>0h</span></div>
+        <div class="chart-plot">${lineChart([3.4,3.2,3.1,2.9,2.8,2.9,2.6,2.5,2.4,2.2,2.3,2.1],1140,200,'var(--series-all)',WEEKS,'Median time to first response','hrs')}</div>
+      </div>
+      ${xAxis(WEEKS)}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Satisfaction (CSAT) ---------- */
+function pageReportsCsat(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Satisfaction (CSAT)</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">See how satisfied students, instructors, and administrators are with the help they received.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search conversations</button>
+    <button class="btn">All roles &#8964;</button>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-4">
+      <div class="stat-tile highlight"><div class="stat-label">${I('smile',14)}Average satisfaction</div>
+        <div class="stat-value-row"><span class="stat-value">4.6/5</span><span class="stat-delta up">${I('arrowUp',12)}+0.1</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('messageCircle',14)}Rated conversations</div>
+        <div class="stat-value-row"><span class="stat-value">61%</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('userCheck',14)}Resolution rate</div>
+        <div class="stat-value-row"><span class="stat-value">89%</span><span class="stat-delta up">${I('arrowUp',12)}+2pt</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('alertTriangle',14)}Negative ratings this week</div>
+        <div class="stat-value-row"><span class="stat-value">3</span><span class="stat-delta down">${I('arrowDown',12)}-2</span></div></div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+      <div class="card chart-card" style="flex:2;min-width:400px;">
+        <h3>Satisfaction score, last 12 weeks</h3>
+        <div class="chart-wrap">
+          <div class="chart-yaxis" style="height:180px;"><span>5</span><span>2.5</span><span>0</span></div>
+          <div class="chart-plot">${lineChart([4.1,4.2,4.2,4.3,4.3,4.4,4.4,4.5,4.5,4.5,4.6,4.6],780,180,'var(--series-all)',WEEKS,'Satisfaction','/5')}</div>
+        </div>
+        ${xAxis(WEEKS)}
+      </div>
+      <div class="card chart-card" style="flex:1;min-width:280px;">
+        <h3>Rating distribution</h3>
+        <div class="chart-wrap">
+          <div class="chart-yaxis" style="height:180px;"><span>60%</span><span>30%</span><span>0%</span></div>
+          <div class="chart-plot">${barChart([2,3,7,26,62],320,180,'var(--bar-idle)',65,'Ratings',['1 star','2 stars','3 stars','4 stars','5 stars'])}</div>
+        </div>
+        ${xAxis(['1&#9733;','2&#9733;','3&#9733;','4&#9733;','5&#9733;'])}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Lockdown Browser ---------- */
+function pageReportsLockdownBrowser(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Lockdown Browser</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">Track lockdown browser stability during exams &mdash; crashes, forced closures, and recovery.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search sessions</button>
+    <button class="btn">All institutions</button>
+    <span class="filter-spacer"></span>
+    <button class="btn">Compare to last period</button>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile"><div class="stat-label">${I('monitor',14)}Sessions with a crash or forced close</div>
+        <div class="stat-value-row"><span class="stat-value">4.1%</span><span class="stat-delta down">${I('arrowDown',12)}-0.6pt</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('scan',14)}Sessions using lockdown browser</div>
+        <div class="stat-value-row"><span class="stat-value">3,208</span><span class="stat-delta up">${I('arrowUp',12)}+6%</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('rotateCcw',14)}Recovered without support</div>
+        <div class="stat-value-row"><span class="stat-value">84%</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Crash rate by week</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:220px;"><span>8%</span><span>4%</span><span>0%</span></div>
+        <div class="chart-plot">${lineChart([6.8,6.5,6.9,6.1,5.8,6,5.4,5.1,5.3,4.6,4.4,4.1],1124,220,'var(--series-all)',WEEKS,'Crash rate','%')}</div>
+      </div>
+      ${xAxis(WEEKS)}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Extension Violations ---------- */
+function pageReportsExtensionViolations(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Extension Violations</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">Track browser extension conflicts and policy violations detected during proctored exams.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search sessions</button>
+    <button class="btn">All institutions</button>
+    <span class="filter-spacer"></span>
+    <span class="filter-meta">Updated 3 minutes ago</span>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile highlight"><div class="stat-label">${I('puzzle',14)}Violations detected this week</div>
+        <div class="stat-value-row"><span class="stat-value">8</span><span class="stat-delta up">${I('arrowUp',12)}+2 vs last week</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('scan',14)}Sessions scanned for extensions</div>
+        <div class="stat-value-row"><span class="stat-value">3,208</span><span class="stat-delta up">${I('arrowUp',12)}+6%</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('rotateCcw',14)}Resolved without escalation</div>
+        <div class="stat-value-row"><span class="stat-value">88%</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Violations detected by week</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:200px;"><span>10</span><span>5</span><span>0</span></div>
+        <div class="chart-plot">${barChart([2,3,2,4,3,5,4,6,5,7,6,8],1138,200,'var(--bar-idle)',10,'Violations',WEEKS)}</div>
+      </div>
+      ${xAxis(WEEKS)}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Screen Share & Multi-Monitor ---------- */
+function pageReportsScreenShare(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Screen Share &amp; Multi-Monitor</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">Track screen share permission failures and multi-monitor detections during proctored exams.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search sessions</button>
+    <button class="btn">All institutions</button>
+    <span class="filter-spacer"></span>
+    <button class="btn">Compare to last period</button>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile"><div class="stat-label">${I('monitor',14)}Multi-monitor detections</div>
+        <div class="stat-value-row"><span class="stat-value">3.2%</span><span class="stat-delta down">${I('arrowDown',12)}-0.4pt</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('camOff',14)}Screen share permission failures</div>
+        <div class="stat-value-row"><span class="stat-value">41</span><span class="stat-delta up">${I('arrowUp',12)}+5</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('rotateCcw',14)}Cleared on retry</div>
+        <div class="stat-value-row"><span class="stat-value">79%</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Detection rate by week</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:220px;"><span>6%</span><span>3%</span><span>0%</span></div>
+        <div class="chart-plot">${lineChart([4.8,4.6,4.9,4.3,4.5,4.1,4.4,3.9,3.7,3.6,3.4,3.2],1124,220,'var(--series-all)',WEEKS,'Detection rate','%')}</div>
+      </div>
+      ${xAxis(WEEKS)}
+    </div>
+  </div>`;
+}
+
+/* ---------- Reports: Exam Completion Rate ---------- */
+function pageReportsExamCompletion(){
+  return `
+  <div class="topbar">
+    <div class="topbar-row">
+      <div><h1>Exam Completion Rate</h1></div>
+      <div class="topbar-actions"><button class="btn">Date range</button><button class="btn">Export</button><button class="btn">Share</button><button class="btn btn-primary">Save</button></div>
+    </div>
+    <p class="sub" style="margin-top:14px;">Track how often proctored exam sessions complete without a technical or integrity interruption.</p>
+  </div>
+  <div class="filter-row bordered">
+    <button class="btn">${I('search',13)} Search sessions</button>
+    <button class="btn">All institutions</button>
+    <span class="filter-spacer"></span>
+    <button class="btn">Compare to last period</button>
+  </div>
+  <div class="scroll-body">
+    <div class="stat-grid cols-3">
+      <div class="stat-tile highlight"><div class="stat-label">${I('check',14)}Completed without interruption</div>
+        <div class="stat-value-row"><span class="stat-value">93.4%</span><span class="stat-delta up">${I('arrowUp',12)}+0.7pt</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('monitor',14)}Terminated early &mdash; technical</div>
+        <div class="stat-value-row"><span class="stat-value">142</span><span class="stat-delta down">${I('arrowDown',12)}-18</span></div></div>
+      <div class="stat-tile"><div class="stat-label">${I('shieldAlert',14)}Terminated early &mdash; integrity flag</div>
+        <div class="stat-value-row"><span class="stat-value">31</span><span class="stat-delta up">${I('arrowUp',12)}+4</span></div></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Sessions terminated early, by week</h3>
+      <div class="chart-wrap">
+        <div class="chart-yaxis" style="height:200px;"><span>20</span><span>10</span><span>0</span></div>
+        <div class="chart-plot">${multiLineChart([
+          {data:[16,15,17,14,13,15,12,13,11,10,12,9],color:'var(--bar-idle)',width:2.5,name:'Technical'},
+          {data:[2,3,2,3,2,4,2,3,3,4,3,4],color:'var(--red-text)',name:'Integrity flag'},
+        ],1140,200,WEEKS)}</div>
+      </div>
+      ${xAxis(WEEKS)}
+      <div class="chart-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--bar-idle);"></span>Technical</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--red-text);"></span>Integrity flag</div>
+      </div>
     </div>
   </div>`;
 }

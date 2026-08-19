@@ -77,26 +77,41 @@ function knowledgeNav(active){
 function reportsNav(active){
   const item = (key,label,icon,count) => `<button class="nav-item clickable${active===key?' active':''}" data-page="${key}">
       <span class="left">${I(icon,18)}<span>${label}</span></span>${count!==undefined?`<span class="count">${count}</span>`:''}</button>`;
+  const folder = (id, label, pages, children) => {
+    const open = pages.includes(active);
+    return `<li class="nav-folder-group">
+      <button class="nav-folder clickable${open?' open':''}" onclick="toggleAccordion(event,'${id}')">
+        <span class="left">${I('folder',18)}<span>${label}</span></span>${I('chevronRight',10)}
+      </button>
+      <ul class="nav-sublist${open?' open':''}" id="${id}">
+        ${children.map(([key,childLabel])=>`<li><button class="nav-child clickable${active===key?' active':''}" data-page="${key}">${childLabel}</button></li>`).join('')}
+      </ul>
+    </li>`;
+  };
   return `<div class="secondary-nav">
     <div class="secondary-nav-header"><h2>Reports</h2><button class="icon-btn-circle">${I('plus',14)}</button></div>
     <ul class="nav-list">
       <li>${item('reports-overview','Overview','grid')}</li>
       <li>${item('reports-all','All reports','bar',31)}</li>
       <li><span class="nav-item">${'<span class="left">'+I('fileText',18)+'<span>Your reports</span></span>'}<span class="count">0</span></span></li>
-      <li><span class="nav-item">${'<span class="left">'+I('heart',18)+'<span>Your favorites</span></span>'}${I('chevronRight',10)}</span></li>
-      <li class="nav-empty">No reports added</li>
-      <li><span class="nav-item">${'<span class="left">'+I('msgSquare',18)+'<span>Conversation topics</span></span>'}${I('chevronRight',10)}</span></li>
       <li><span class="nav-item">${'<span class="left">'+I('filter',18)+'<span>Saved filters</span></span>'}</span></li>
       <li><span class="nav-item">${'<span class="left">'+I('download',18)+'<span>Dataset export</span></span>'}</span></li>
       <li><span class="nav-item">${'<span class="left">'+I('calClock',18)+'<span>Manage schedules</span></span>'}</span></li>
     </ul>
     <div class="nav-divider"></div>
     <ul class="nav-list">
-      <li class="nav-folder">${I('folder',18)}<span>AI &amp; Automation</span></li>
-      <li><button class="nav-child clickable${active==='reports-ai-assist'?' active':''}" data-page="reports-ai-assist">AI Assist</button></li>
-      <li class="nav-folder">${I('folder',18)}<span>Proctoring</span></li>
-      <li><button class="nav-child clickable${active==='reports-flagged-sessions'?' active':''}" data-page="reports-flagged-sessions">Flagged Sessions</button></li>
-      <li><button class="nav-child clickable${active==='reports-room-scan'?' active':''}" data-page="reports-room-scan">Room Scan Failures</button></li>
+      ${folder('reports-folder-human-support','Human Support',
+        ['reports-topics','reports-conversations-by-role','reports-response-time','reports-csat'],
+        [['reports-topics','Conversation Topics'],['reports-conversations-by-role','New Conversations by Role'],
+         ['reports-response-time','Response Time'],['reports-csat','Satisfaction (CSAT)']])}
+      ${folder('reports-folder-ai-automation','AI &amp; Automation',
+        ['reports-ai-assist'],
+        [['reports-ai-assist','AI Assist']])}
+      ${folder('reports-folder-proctoring','Proctoring',
+        ['reports-flagged-sessions','reports-room-scan','reports-lockdown-browser','reports-extension-violations','reports-screen-share','reports-exam-completion'],
+        [['reports-flagged-sessions','Flagged Sessions'],['reports-room-scan','Room Scan Failures'],
+         ['reports-lockdown-browser','Lockdown Browser'],['reports-extension-violations','Extension Violations'],
+         ['reports-screen-share','Screen Share &amp; Multi-Monitor'],['reports-exam-completion','Exam Completion Rate']])}
     </ul>
   </div>`;
 }
@@ -164,13 +179,32 @@ function chartHit(x0, cw, h, cx, cyList, i, tip){
   return `<rect class="chart-hit" x="${x0.toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${h}" fill="transparent"
     data-cx="${cx}" data-cy='[${cyList.join(',')}]' data-i="${i}" data-tip='${tip.replace(/'/g,'&#39;')}'/>`;
 }
+let __chartUid = 0;
+// Catmull-Rom -> cubic Bezier, so line charts read as smooth curves through
+// each point (rounded peaks/valleys) rather than sharp polyline joints.
+function smoothPath(coords){
+  if(coords.length<2) return `M${coords[0][0]},${coords[0][1]}`;
+  let d = `M${coords[0][0].toFixed(2)},${coords[0][1].toFixed(2)}`;
+  for(let i=0;i<coords.length-1;i++){
+    const p0 = coords[i-1] || coords[i];
+    const p1 = coords[i];
+    const p2 = coords[i+1];
+    const p3 = coords[i+2] || p2;
+    const c1x = p1[0] + (p2[0]-p0[0])/6, c1y = p1[1] + (p2[1]-p0[1])/6;
+    const c2x = p2[0] - (p3[0]-p1[0])/6, c2y = p2[1] - (p3[1]-p1[1])/6;
+    d += ` C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
 function lineChart(points, w, h, color, labels, seriesName, unit){
   const step = w/(points.length-1);
   const max = Math.max(...points), min=0;
   const norm = v => h - ((v-min)/(max-min||1))*h;
-  const pts = points.map((v,i)=> (i*step).toFixed(1)+','+norm(v).toFixed(1)).join(' ');
-  const area = `0,${h} ${pts} ${w},${h}`;
+  const coords = points.map((v,i)=>[i*step, norm(v)]);
+  const linePath = smoothPath(coords);
+  const areaPath = `${linePath} L${w},${h} L0,${h} Z`;
   const name = seriesName || 'Value';
+  const gradId = 'lg'+(__chartUid++);
   let hits = '';
   for(let i=0;i<points.length;i++){
     const cx = (i*step).toFixed(1), cy = norm(points[i]).toFixed(1);
@@ -180,11 +214,15 @@ function lineChart(points, w, h, color, labels, seriesName, unit){
     hits += chartHit(x0, cw, h, cx, [cy], i, tip);
   }
   return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
-    <line x1="0" y1="0" x2="${w}" y2="0" stroke="#e8e4e3" stroke-width="1"/>
-    <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#e8e4e3" stroke-width="1"/>
-    <line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="#e8e4e3" stroke-width="1"/>
-    <polygon class="chart-area" points="${area}" fill="${color}" opacity=".12"/>
-    <polyline class="chart-line" points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" pathLength="100"/>
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line class="chart-grid" x1="0" y1="0" x2="${w}" y2="0"/>
+    <line class="chart-grid" x1="0" y1="${h/2}" x2="${w}" y2="${h/2}"/>
+    <line class="chart-grid" x1="0" y1="${h}" x2="${w}" y2="${h}"/>
+    <path class="chart-area" d="${areaPath}" fill="url(#${gradId})"/>
+    <path class="chart-line" d="${linePath}" fill="none" stroke="${color}" stroke-width="2.5" pathLength="100"/>
     <circle class="chart-dot-ping" cx="${w}" cy="${norm(points[points.length-1])}" r="4" fill="${color}"/>
     <circle class="chart-dot" cx="${w}" cy="${norm(points[points.length-1])}" r="4" fill="${color}"/>
     <line class="chart-crosshair" x1="0" y1="0" x2="0" y2="${h}"/>
@@ -197,12 +235,12 @@ function multiLineChart(series, w, h, labels){
   const max = Math.max(...series.flatMap(s=>s.data));
   const norm = v => h - (v/(max||1))*h;
   let out = `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible;">
-    <line x1="0" y1="0" x2="${w}" y2="0" stroke="#e8e4e3" stroke-width="1"/>
-    <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#e8e4e3" stroke-width="1"/>
-    <line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="#e8e4e3" stroke-width="1"/>`;
+    <line class="chart-grid" x1="0" y1="0" x2="${w}" y2="0"/>
+    <line class="chart-grid" x1="0" y1="${h/2}" x2="${w}" y2="${h/2}"/>
+    <line class="chart-grid" x1="0" y1="${h}" x2="${w}" y2="${h}"/>`;
   series.forEach((s,si)=>{
-    const pts = s.data.map((v,i)=> (i*step).toFixed(1)+','+norm(v).toFixed(1)).join(' ');
-    out += `<polyline class="chart-line" points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width||2}" pathLength="100" style="--delay:${(si*0.12).toFixed(2)}s"/>`;
+    const coords = s.data.map((v,i)=>[i*step, norm(v)]);
+    out += `<path class="chart-line" d="${smoothPath(coords)}" fill="none" stroke="${s.color}" stroke-width="${s.width||2}" pathLength="100" style="--delay:${(si*0.12).toFixed(2)}s"/>`;
   });
   // Only the lead series gets the live pulse — restraint over decorating every line.
   const lead = series[0];
@@ -240,7 +278,40 @@ function barChart(values, w, h, color, max, seriesName, labels){
     bars += `<rect class="chart-bar" x="${x.toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,2).toFixed(1)}" rx="2" fill="${fill}"
       style="--delay:${(i*0.045).toFixed(3)}s" data-tip='${tip.replace(/'/g,'&#39;')}'/>`;
   });
-  return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;">${bars}</svg>`;
+  return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;">
+    <line class="chart-grid" x1="0" y1="0" x2="${w}" y2="0"/>
+    <line class="chart-grid" x1="0" y1="${h/2}" x2="${w}" y2="${h/2}"/>
+    <line class="chart-grid" x1="0" y1="${h}" x2="${w}" y2="${h}"/>
+    ${bars}</svg>`;
+}
+// Ring via stroke-dasharray/dashoffset on concentric circles (pathLength=100
+// normalization, same trick lineChart uses) rather than path-arc math — each
+// segment is a fixed-position circle (dashoffset = -cumulative%, never
+// animated) layered under an identically-positioned invisible .chart-bar
+// hit circle (wider stroke, animation:none so it doesn't inherit barGrow's
+// scaleY meant for actual bars) that feeds the existing tooltip pipeline.
+// The visible ring segment's own draw-in grows its dasharray length from 0.
+function donutChart(segments, size, strokeWidth, centerLabel){
+  const cx = size/2, cy = size/2;
+  const r = size/2 - strokeWidth;
+  const total = segments.reduce((s,seg)=>s+seg.value,0) || 1;
+  let cum = 0, rings = '';
+  segments.forEach((seg,i)=>{
+    const Li = seg.value/total*100;
+    const LiStr = Li.toFixed(2), gapStr = (100-Li).toFixed(2), offset = (-cum).toFixed(2);
+    const tip = JSON.stringify({label:seg.name, entries:[{color:seg.color, name:'Conversations', value:seg.value}]});
+    rings += `<circle class="chart-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${strokeWidth}"
+      pathLength="100" stroke-dashoffset="${offset}" style="--seg-len:${LiStr};--seg-gap:${gapStr};--delay:${(i*0.12).toFixed(2)}s"/>
+      <circle class="chart-bar" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="transparent" stroke-width="${strokeWidth+12}"
+      pathLength="100" stroke-dasharray="${LiStr} ${gapStr}" stroke-dashoffset="${offset}" style="animation:none"
+      data-tip='${tip.replace(/'/g,'&#39;')}'/>`;
+    cum += Li;
+  });
+  return `<svg class="mini-chart" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block;overflow:visible;">
+    <g transform="rotate(-90 ${cx} ${cy})">${rings}</g>
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="24" font-weight="600" fill="var(--text)">${total}</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" fill="var(--muted)">${centerLabel||''}</text>
+  </svg>`;
 }
 const WEEKS = ['May 18','May 25','Jun 1','Jun 8','Jun 15','Jun 22','Jun 29','Jul 6','Jul 13','Jul 20','Jul 27','Aug 3'];
 function xAxis(labels){ return `<div class="chart-xaxis">${labels.map(l=>`<span>${l}</span>`).join('')}</div>`; }
