@@ -110,11 +110,25 @@ let activeConvo = 'welcome';
    and cancel them. */
 let inboxDemoTimers = [];
 
+/* Once true, clicking Close skips the "Are you sure?" confirmation entirely
+   — set only via the "Don't ask again" follow-up (see dontAskAgain in
+   app.js). Session-only, like every other local-only preference in this
+   prototype (settingsToggles, etc.) — resets on reload. */
+let skipCloseConfirm = false;
+
+/* The single source of truth for every non-pinned row in the inbox list —
+   most-recent-first. pageInbox() always renders from this array (never from
+   whatever happens to already be in the DOM), so navigating away and back to
+   the inbox reconstructs the exact same list instead of resetting to just
+   the pinned Welcome row. Every live mutation (an arrival, a close, a reply)
+   updates this array AND the live DOM together, so the two never drift out
+   of sync — see demoAddChatter / closeActiveConversation / markRowReplied
+   in app.js. Each entry: {key, role, label, preview, timeMode, fixedTime,
+   arrivedAt, activityAt, opts:{live, unread, replied, closed}}. */
+let inboxRows = [];
+
 /* Inbox filter/sort selection: module-level so it survives renderShell() and
-   so the tab label + popover checkmark read from one source of truth. Starts
-   low since the list opens with just the pinned Welcome message, and climbs
-   as conversations trickle in (see demoAddChatter in app.js). */
-const FILTER_LABELS = {open:'0 Open', closed:'4 Closed', all:'0 Open & Closed'};
+   so the tab label + popover checkmark read from one source of truth. */
 const SORT_LABELS = {'last-activity':'Last activity', 'date-started':'Date started', 'waiting-since':'Waiting since'};
 let inboxStatusFilter = 'open';
 let inboxSortBy = 'last-activity';

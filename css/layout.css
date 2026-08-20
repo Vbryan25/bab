@@ -111,6 +111,19 @@
     background:var(--border-rail);z-index:2;pointer-events:none;}
   .content-card{flex:1;min-width:0;min-height:0;background:#fff;border-radius:16px;
     box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;}
+  /* Every page navigation — sidenav clicks, skeleton swapping to real content,
+     dashboard-to-dashboard — goes through renderShell/renderSkeleton, which
+     always rebuild this card (or the inbox's .content.bare) as fresh DOM.
+     That "always fresh" property is what lets a plain CSS entrance animation
+     replay correctly on every single navigation with zero JS timing logic —
+     same mechanism as .chat-item's arrival animation. Kept short (140ms) so
+     it reads as a polish pass, not a delay before the page is usable. */
+  @keyframes contentIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .content-card{animation:contentIn .14s ease;}
+  .content.bare>*{animation:contentIn .14s ease;}
+  @media (prefers-reduced-motion:reduce){
+    .content-card,.content.bare>*{animation:none;}
+  }
   .topbar{background:transparent;border-bottom:none;padding:20px 24px 8px;flex:0 0 auto;}
   .topbar h1{font-size:24px;font-weight:600;letter-spacing:-.04em;margin:0 0 4px;}
   .topbar p.sub{font-size:13px;color:var(--muted);}

@@ -90,8 +90,12 @@ document.addEventListener('click', function(e){
     const isToggle = e.target.closest('.convo-header-btn');
     if(!withinPopover && !isToggle) popover.classList.remove('open');
   }
-  // click-away closes composer flyouts (command menu / emoji / AI)
-  if(!e.target.closest('.composer-wrap')){
+  // click-away closes composer flyouts (command menu / emoji / AI) — the ⌘K
+  // palette is exempt since it isn't inside .composer-wrap at all; it has
+  // its own dedicated close paths (the backdrop's onclick, Escape, running a
+  // command), so this generic composer click-away must not also fire for
+  // clicks inside it (e.g. clicking the palette's own search input).
+  if(!e.target.closest('.composer-wrap') && !e.target.closest('#command-modal')){
     closeCommandMenu();
     closeEmojiMenu();
     closeAiMenu();
@@ -132,6 +136,20 @@ document.addEventListener('click', function(e){
   }
 });
 
+// Cmd/Ctrl+K opens the same commands as the composer's inline "!" trigger,
+// just presented full-screen instead of anchored to the composer (see
+// openCommandModal). It only acts when the palette actually exists in the
+// DOM (the inbox's chat window), so it never hijacks the browser's own
+// shortcut on a page with no composer.
+document.addEventListener('keydown', function(e){
+  if(e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey)) return;
+  const modal = document.getElementById('command-modal');
+  if(!modal) return;
+  e.preventDefault();
+  if(modal.classList.contains('open')) closeCommandModal();
+  else openCommandModal();
+});
+
 // These five popovers all live in the header/list area (as opposed to the
 // composer flyouts, which are spatially separate) — each one's toggle closes
 // the other four, since stopPropagation() below means the document-level
@@ -154,12 +172,26 @@ function toggleViews(e){
   const popover = document.getElementById('views-popover');
   if(popover) popover.classList.toggle('open');
 }
+// There's no multi-agent assignment or spam/mention system in this
+// prototype, so Your Inbox / All / Unassigned are honestly the same
+// underlying list (nothing is ever assigned to anyone else, which is
+// exactly why their counts already match) — switching between them doesn't
+// pretend to filter to a different set. Mentions/Spam say so plainly instead
+// of the generic "isn't wired up" phrasing, since those aren't unwired, they
+// simply don't exist as a feature yet.
+const VIEW_HINTS = {
+  'your-inbox': 'Showing Your Inbox',
+  all: 'Showing all conversations',
+  unassigned: 'Showing unassigned conversations — nothing is assigned to a specific teammate in this prototype',
+  mentions: 'This is a prototype — @mentions aren’t implemented',
+  spam: 'This is a prototype — spam marking isn’t implemented',
+};
 function selectView(e, key){
   e.stopPropagation();
   document.querySelectorAll('.view-item').forEach(el=>el.classList.remove('active'));
   e.currentTarget.classList.add('active');
   document.getElementById('views-popover').classList.remove('open');
-  showHint(key==='your-inbox' ? 'Showing Your Inbox' : 'This is a prototype — only Your Inbox has live data');
+  showHint(VIEW_HINTS[key] || 'Showing Your Inbox');
 }
 function toggleChatMoreMenu(e){
   e.stopPropagation();
@@ -204,13 +236,55 @@ function onConvoSearchKeydown(e){
 }
 function closeFilterMenu(){ const m=document.getElementById('filter-menu'); if(m) m.classList.remove('open'); }
 function closeSortMenu(){ const m=document.getElementById('sort-menu'); if(m) m.classList.remove('open'); }
+// Open/Closed counts are computed fresh from inboxRows every time, rather
+// than mutated as strings — there's exactly one source of truth for "how
+// many are open" (inboxRows itself), so the label can never drift from what
+// the list actually shows.
+function computeFilterLabel(key){
+  const openCount = inboxOpenCount();
+  const closedCount = inboxRows.length - openCount;
+  if(key === 'open') return openCount + ' Open';
+  if(key === 'closed') return closedCount + ' Closed';
+  return inboxRows.length + ' Open & Closed';
+}
+function inboxOpenCount(){
+  return inboxRows.filter(function(r){ return !r.opts.closed; }).length;
+}
+// Real filtering: a row's visibility is just "does its closed state match
+// the selected tab" — recomputed on every row, not merely relabeled.
+function applyInboxFilterVisibility(){
+  inboxRows.forEach(function(r){
+    const row = document.querySelector('.chat-item[data-convo="'+r.key+'"]');
+    if(row) row.classList.toggle('filtered-out', inboxRowFilteredOut(r));
+  });
+}
 function selectFilter(e, key){
   e.stopPropagation();
   inboxStatusFilter = key;
-  document.querySelector('[data-role="filter"] .filter-tab-label').textContent = FILTER_LABELS[key];
+  document.querySelector('[data-role="filter"] .filter-tab-label').textContent = computeFilterLabel(key);
   document.querySelectorAll('#filter-menu .menu-check-item').forEach(function(el,i){ el.classList.toggle('active', ['open','closed','all'][i]===key); });
   closeFilterMenu();
-  showHint('This is a prototype — filtering isn’t wired up yet');
+  applyInboxFilterVisibility();
+}
+// Real sorting: each mode reads a different real timestamp off inboxRows —
+// see inboxSortKeyFor for what each one actually measures.
+function inboxSortKeyFor(r, mode){
+  if(mode === 'date-started') return r.arrivedAt;
+  if(mode === 'waiting-since') return r.opts.replied ? r.activityAt : r.arrivedAt;
+  return r.activityAt; // last-activity (default)
+}
+function inboxSortedRows(){
+  return inboxRows.slice().sort(function(a,b){ return inboxSortKeyFor(b, inboxSortBy) - inboxSortKeyFor(a, inboxSortBy); });
+}
+function applyInboxSort(){
+  const scroll = document.querySelector('.convo-scroll');
+  if(!scroll) return;
+  const pinned = scroll.querySelector('.chat-item.pinned');
+  inboxSortedRows().forEach(function(r){
+    const row = scroll.querySelector('.chat-item[data-convo="'+r.key+'"]');
+    if(row) scroll.appendChild(row); // repeated append walks every row into sorted order
+  });
+  if(pinned) scroll.insertBefore(pinned, scroll.firstChild);
 }
 function selectSort(e, key){
   e.stopPropagation();
@@ -218,11 +292,11 @@ function selectSort(e, key){
   document.querySelector('[data-role="sort"] .filter-tab-label').textContent = SORT_LABELS[key];
   document.querySelectorAll('#sort-menu .menu-check-item').forEach(function(el,i){ el.classList.toggle('active', ['last-activity','date-started','waiting-since'][i]===key); });
   closeSortMenu();
-  showHint('This is a prototype — sorting isn’t wired up yet');
+  applyInboxSort();
 }
-// Selecting a row marks it read and moves the selected state — the open
-// thread itself doesn't change, since only Jordan Lee's conversation has
-// live data in this prototype.
+// Selecting a row marks it read and moves the selected state. Every row —
+// flagship or filler — has a real CONVERSATIONS entry now, so the chat pane
+// always ends up showing exactly the conversation that's visually selected.
 function selectChatItem(e, row){
   if(row.classList.contains('selected')) return;
   cancelInboxDemo(); // a real click always takes control back from the auto-demo
@@ -234,10 +308,12 @@ function selectChatItem(e, row){
   row.classList.remove('unread');
   row.classList.add('selected');
   row.setAttribute('aria-current','true');
+  const state = inboxRows.find(function(r){ return r.key === key; });
+  if(state) state.opts.unread = false;
   if(key && CONVERSATIONS[key]){
     renderConversation(key);
   } else {
-    showHint('This is a prototype — only a few conversations have live data');
+    showHint('This is a prototype — this conversation has no data yet');
   }
 }
 // Swaps the chat window's header/thread/side-panel to a different
@@ -263,8 +339,105 @@ function renderConversation(key){
     : '<div class="field-row-empty">No details to show for this message.</div>';
   const accEl = document.getElementById('side-panel-accordions');
   if(accEl) accEl.innerHTML = convoAccordionsHtml(conv);
+  // Welcome has no side panel at all — not just collapsed, not applicable
+  // (see pageInbox's isWelcomeActive). Keep this in sync with that same
+  // condition so switching conversations without a full re-render still
+  // shows/hides it correctly.
+  const isWelcomeActive = key === 'welcome';
+  const sidePanel = document.querySelector('.side-panel');
+  if(sidePanel){
+    sidePanel.classList.toggle('hidden', isWelcomeActive);
+    sidePanel.setAttribute('aria-hidden', String(sidePanelCollapsed || isWelcomeActive));
+  }
+  const reopenBtn = document.querySelector('[data-panel-toggle]');
+  if(reopenBtn) reopenBtn.classList.toggle('show', sidePanelCollapsed && !isWelcomeActive);
   const composer = document.getElementById('composer-input');
   if(composer){ composer.innerHTML = ''; updateSendBtn(); }
+}
+// Recomputes the filter tab label and the Views popover counts from
+// inboxRows — call after anything that changes row count or open/closed mix
+// (an arrival, a close). Replying doesn't change either, so it doesn't need
+// this.
+function syncInboxCounters(){
+  const filterLabel = document.querySelector('[data-role="filter"] .filter-tab-label');
+  if(filterLabel) filterLabel.textContent = computeFilterLabel(inboxStatusFilter);
+  const openCount = inboxOpenCount();
+  ['your-inbox','unassigned'].forEach(function(view){
+    const el = document.querySelector('.view-item[data-view="'+view+'"] .view-count');
+    if(el) el.textContent = openCount;
+  });
+  const allEl = document.querySelector('.view-item[data-view="all"] .view-count');
+  if(allEl) allEl.textContent = inboxRows.length;
+}
+// Clicking Close asks for confirmation first (skipCloseConfirm, icons.js) —
+// unless the agent already opted out via the "don't ask again" follow-up,
+// in which case it closes immediately. That opt-out is the ONLY thing that
+// ever skips the confirmation; declining it (Cancel, or dismissing the
+// follow-up without choosing "Don't ask again") means it keeps showing up
+// every time, by design.
+function closeActiveConversation(e){
+  if(e) e.stopPropagation();
+  if(activeConvo === 'welcome'){
+    showHint('This is a prototype — the Welcome message can’t be closed');
+    return;
+  }
+  cancelInboxDemo(); // clicking Close is a real action, even before it's confirmed
+  if(skipCloseConfirm){
+    performCloseConversation();
+    return;
+  }
+  document.getElementById('confirm-backdrop').classList.add('open');
+  document.getElementById('close-confirm-modal').classList.add('open');
+}
+function cancelCloseConversation(){
+  document.getElementById('confirm-backdrop').classList.remove('open');
+  document.getElementById('close-confirm-modal').classList.remove('open');
+}
+function confirmCloseConversation(){
+  document.getElementById('close-confirm-modal').classList.remove('open');
+  performCloseConversation();
+  // The backdrop stays open — straight into the "don't ask again" follow-up,
+  // same overlay, so it doesn't flicker closed and reopen between the two.
+  document.getElementById('dont-ask-modal').classList.add('open');
+}
+function closeDontAskModal(){
+  document.getElementById('confirm-backdrop').classList.remove('open');
+  document.getElementById('dont-ask-modal').classList.remove('open');
+}
+function dontAskAgain(){
+  skipCloseConfirm = true;
+  closeDontAskModal();
+  showToast('Got it — you won’t be asked again', {type:'success'});
+}
+document.getElementById('confirm-backdrop').addEventListener('click', function(){
+  cancelCloseConversation();
+  closeDontAskModal();
+});
+// The actual close: marks the row genuinely leaving the Open view (and
+// genuinely reappearing under Closed/Open & Closed — this isn't a one-way
+// disappearance), shifts the counts for real, and falls back to the pinned
+// Welcome message.
+function performCloseConversation(){
+  const key = activeConvo;
+  const state = inboxRows.find(function(r){ return r.key === key; });
+  const row = document.querySelector('.chat-item[data-convo="'+key+'"]');
+  if(state) state.opts.closed = true;
+  if(row){
+    row.classList.remove('unread','selected');
+    row.classList.add('closed');
+    row.setAttribute('aria-current','false');
+    const rightEl = row.querySelector('.chat-item-time, .live-badge');
+    if(rightEl) rightEl.outerHTML = '<span class="closed-badge">Closed</span>';
+  }
+  applyInboxFilterVisibility();
+  syncInboxCounters();
+  showToast('Conversation closed', {type:'success'});
+  const welcomeRow = document.querySelector('.chat-item[data-convo="welcome"]');
+  if(welcomeRow){
+    welcomeRow.classList.add('selected');
+    welcomeRow.setAttribute('aria-current','true');
+  }
+  renderConversation('welcome');
 }
 
 /* ---------------- inbox intro trickle ---------------- */
@@ -291,24 +464,42 @@ function cancelInboxDemo(){
   inboxDemoTimers.forEach(clearTimeout);
   inboxDemoTimers = [];
 }
+// Pushes a real inboxRows entry (see icons.js) and reflects it in the live
+// DOM — every arrival lands unread and never pre-replied, since a message
+// that just arrived can't already have a staff reply attached to it.
 function demoAddChatter(item){
   const scroll = document.querySelector('.convo-scroll');
   if(!scroll) return;
   const pinned = scroll.querySelector('.chat-item.pinned');
-  // Every arrival lands unread until the agent opens it — enforced here
-  // rather than trusted per-entry, since a live inbox never receives a
-  // conversation that's already "read".
-  const opts = Object.assign({}, item.opts, {unread:true});
-  const html = inboxChatItem(item.role, item.label, item.time, item.preview, opts);
+  const now = Date.now();
+  const state = {
+    key: item.key, role: item.role, label: item.label, preview: item.preview,
+    timeMode: item.time === 'now' ? 'ticking' : (item.time ? 'fixed' : 'badge'),
+    fixedTime: item.time && item.time !== 'now' ? item.time : null,
+    arrivedAt: now, activityAt: now,
+    opts: Object.assign({}, item.opts, {unread:true, replied:false, closed:false}),
+  };
+  inboxRows.unshift(state);
+  const html = inboxRowHtml(state);
   if(pinned) pinned.insertAdjacentHTML('afterend', html);
   else scroll.insertAdjacentHTML('afterbegin', html);
-  FILTER_LABELS.open = FILTER_LABELS.open.replace(/\d+/, m => String(Number(m)+1));
-  FILTER_LABELS.all = FILTER_LABELS.all.replace(/\d+/, m => String(Number(m)+1));
-  if(inboxStatusFilter !== 'closed'){
-    const label = document.querySelector('[data-role="filter"] .filter-tab-label');
-    if(label) label.textContent = FILTER_LABELS[inboxStatusFilter];
-  }
+  syncInboxCounters();
 }
+// Recomputes a row's "_m ago" text from its real activity timestamp — runs
+// on an interval so a row that's been sitting for a while keeps climbing
+// instead of freezing at whatever it said when it landed or last changed.
+function relativeTimeLabel(ms){
+  const mins = Math.floor(ms / 60000);
+  return mins < 1 ? 'Just now' : mins + 'm ago';
+}
+function updateArrivalTimestamps(){
+  inboxRows.forEach(function(r){
+    if(r.timeMode !== 'ticking') return; // fixed/badge rows never show a live-computed label
+    const timeEl = document.querySelector('.chat-item[data-convo="'+r.key+'"] .chat-item-time');
+    if(timeEl) timeEl.textContent = relativeTimeLabel(Date.now() - r.activityAt);
+  });
+}
+setInterval(updateArrivalTimestamps, 10000);
 function onChatItemKeydown(e){
   if(e.key === 'Enter' || e.key === ' '){
     e.preventDefault();
@@ -361,9 +552,90 @@ function toggleCommandMenu(e){
   const menu = document.getElementById('command-menu');
   if(menu) menu.classList.toggle('open');
 }
+// "Close the command menu" means whichever command surface is currently
+// open — the composer's inline dropdown or the ⌘K palette modal — so every
+// existing call site that already calls this (Escape, a command being run,
+// click-away, navigating pages) correctly dismisses either one without
+// needing to know which is active.
 function closeCommandMenu(){
   const menu = document.getElementById('command-menu');
   if(menu) menu.classList.remove('open');
+  closeCommandModal();
+}
+// The ⌘K palette: same command list as the inline dropdown, presented as a
+// centered modal over a full-screen backdrop instead of a small anchored
+// panel — see css/inbox.css's .command-palette rules.
+let commandModalIndex = 0;
+function openCommandModal(){
+  closeCommandMenuInline();
+  closeEmojiMenu();
+  closeAiMenu();
+  const backdrop = document.getElementById('command-backdrop');
+  const modal = document.getElementById('command-modal');
+  if(!backdrop || !modal) return;
+  backdrop.classList.add('open');
+  modal.classList.add('open');
+  const input = document.getElementById('command-modal-search');
+  if(input){
+    input.value = '';
+    filterCommandModal('');
+    highlightCommandModalItem(0);
+    setTimeout(function(){ input.focus(); }, 30);
+  }
+}
+function closeCommandModal(){
+  const backdrop = document.getElementById('command-backdrop');
+  const modal = document.getElementById('command-modal');
+  if(backdrop) backdrop.classList.remove('open');
+  if(modal) modal.classList.remove('open');
+}
+// Only the inline "!" dropdown, not the palette — used by openCommandModal
+// so opening the palette doesn't recursively close itself via closeCommandMenu().
+function closeCommandMenuInline(){
+  const menu = document.getElementById('command-menu');
+  if(menu) menu.classList.remove('open');
+}
+function commandModalVisibleItems(){
+  const modal = document.getElementById('command-modal');
+  return modal ? [...modal.querySelectorAll('.command-item')].filter(function(i){ return i.style.display !== 'none'; }) : [];
+}
+function highlightCommandModalItem(index){
+  const items = commandModalVisibleItems();
+  items.forEach(function(i){ i.classList.remove('active'); });
+  if(!items.length) return;
+  commandModalIndex = Math.max(0, Math.min(index, items.length - 1));
+  const el = items[commandModalIndex];
+  el.classList.add('active');
+  el.scrollIntoView({block:'nearest'});
+}
+function filterCommandModal(query){
+  const modal = document.getElementById('command-modal');
+  if(!modal) return;
+  modal.querySelectorAll('.command-item').forEach(function(item){
+    const match = !query || item.textContent.toLowerCase().includes(query);
+    item.style.display = match ? '' : 'none';
+  });
+}
+function onCommandModalSearchInput(e){
+  filterCommandModal(e.currentTarget.value.trim().toLowerCase());
+  highlightCommandModalItem(0);
+}
+function onCommandModalSearchKeydown(e){
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    closeCommandModal();
+  } else if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    highlightCommandModalItem(commandModalIndex + 1);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    highlightCommandModalItem(commandModalIndex - 1);
+  } else if(e.key === 'Enter'){
+    e.preventDefault();
+    const items = commandModalVisibleItems();
+    const target = items[commandModalIndex] || items[0];
+    if(target) target.click();
+  }
 }
 function closeEmojiMenu(){
   const menu = document.getElementById('emoji-menu');
@@ -451,10 +723,39 @@ function sendComposerMessage(e){
   const text = el.textContent.trim();
   if(!text) return;
   appendMineMessage(text);
+  if(activeConvo !== 'welcome') markRowReplied(activeConvo, text);
   el.textContent = '';
   updateSendBtn();
   closeCommandMenu();
   el.focus();
+}
+// Sending a reply is the only thing that ever produces the "replied" state:
+// the row drops out of unread, its avatar swaps to the reply-arrow icon (see
+// roleAvatar), its preview becomes the message we actually just sent, and it
+// jumps to the top of the list as the most recently active conversation.
+function markRowReplied(key, text){
+  const state = inboxRows.find(function(r){ return r.key === key; });
+  const row = document.querySelector('.chat-item[data-convo="'+key+'"]');
+  if(!state || !row) return;
+  state.opts.unread = false;
+  state.opts.replied = true;
+  state.activityAt = Date.now();
+  state.preview = 'You: ' + text;
+  row.classList.remove('unread');
+  row.classList.add('replied');
+  const avatarEl = row.querySelector('.role-avatar');
+  if(avatarEl) avatarEl.outerHTML = roleAvatar(state.role, true);
+  const previewEl = row.querySelector('.chat-item-preview p');
+  if(previewEl) previewEl.textContent = state.preview; // textContent: this is raw typed user input, never innerHTML
+  const timeEl = row.querySelector('.chat-item-time');
+  if(timeEl) timeEl.textContent = relativeTimeLabel(0);
+  if(inboxSortBy === 'last-activity'){
+    const scroll = document.querySelector('.convo-scroll');
+    const pinned = scroll && scroll.querySelector('.chat-item.pinned');
+    if(scroll && pinned) pinned.insertAdjacentElement('afterend', row);
+  } else {
+    applyInboxSort();
+  }
 }
 function toggleEmojiMenu(e){
   e.stopPropagation();
@@ -567,7 +868,7 @@ function toggleMic(e){
     settled = true;
     recognition = null;
     if(event.error === 'no-speech'){
-      showHint('No speech detected.');
+      showToast('No speech detected', {type:'error', description:'Try again, or type your message instead.'});
       btn.classList.remove('mic-recording');
       el.setAttribute('data-placeholder','Type a message or ! for commands');
     } else {
@@ -602,9 +903,29 @@ function toggleMic(e){
   }, 700);
 }
 
+// Grant extra time only makes sense for a student conversation we actually
+// have exam data for — populate the modal from whichever conversation is
+// active rather than always showing Jordan Lee, and refuse to open it at all
+// when there's no real student/exam data to show (an honest hint instead of
+// a modal with fabricated or mismatched facts).
 function openModal(e){
   if(e) e.stopPropagation();
   closeCommandMenu();
+  const conv = CONVERSATIONS[activeConvo];
+  const examField = conv && conv.fields && conv.fields.find(function(f){ return f[0] === 'Exam'; });
+  const nameField = conv && conv.fields && conv.fields.find(function(f){ return f[0].indexOf('Name') !== -1; });
+  const instField = conv && conv.fields && conv.fields.find(function(f){ return f[0] === 'Institution'; });
+  if(!conv || conv.role !== 'student' || !examField || !nameField){
+    showHint('This is a prototype — extra time isn’t available without student and exam data for this conversation');
+    return;
+  }
+  const institution = instField ? instField[1] : 'the institution';
+  document.getElementById('modal-student-name').textContent = nameField[1];
+  document.getElementById('modal-exam').innerHTML = examField[1];
+  document.getElementById('modal-writeback').innerHTML = 'This will be written to ' + nameField[1]
+    + '&rsquo;s incident record and to the ' + institution + ' gradebook, and will be visible to their instructor.';
+  document.getElementById('modal-approval-text').innerHTML = institution
+    + ' requires administrator approval for extra-time grants. This will be sent, not applied directly.';
   document.getElementById('backdrop').classList.add('open');
   document.getElementById('remedy-modal').classList.add('open');
 }
@@ -615,6 +936,14 @@ function closeModal(){
   if(modal) modal.classList.remove('open');
 }
 document.getElementById('backdrop').addEventListener('click', closeModal);
+// No reschedule-request UI exists yet — unlike Grant extra time, this is
+// honestly unbuilt rather than conditionally available, so it always shows
+// the same "not wired up" hint instead of silently doing nothing.
+function rescheduleCommand(e){
+  if(e) e.stopPropagation();
+  closeCommandMenu();
+  showHint('This is a prototype — Reschedule exam isn’t wired up yet');
+}
 
 function goToIntegrityReview(e){
   if(e) e.stopPropagation();
@@ -623,13 +952,28 @@ function goToIntegrityReview(e){
 }
 
 let hintTimer = null;
-function showHint(msg){
+// opts.type: 'default' (no icon, neutral — informational hints, the
+// "isn't wired up yet" convention) | 'success' | 'error'. opts.description
+// is optional second-line detail; omit it for a terse one-liner.
+function showToast(message, opts){
+  opts = opts || {};
   const toast = document.getElementById('hint-toast');
-  toast.textContent = msg;
+  const iconEl = document.getElementById('hint-toast-icon');
+  const msgEl = document.getElementById('hint-toast-message');
+  const descEl = document.getElementById('hint-toast-description');
+  toast.classList.remove('success','error');
+  if(opts.type === 'success'){ toast.classList.add('success'); iconEl.innerHTML = I('check',16); }
+  else if(opts.type === 'error'){ toast.classList.add('error'); iconEl.innerHTML = I('alertCircle',16); }
+  else { iconEl.innerHTML = ''; }
+  msgEl.textContent = message;
+  descEl.textContent = opts.description || '';
   toast.classList.add('show');
   clearTimeout(hintTimer);
-  hintTimer = setTimeout(()=>toast.classList.remove('show'), 2200);
+  hintTimer = setTimeout(()=>toast.classList.remove('show'), opts.description ? 3200 : 2200);
 }
+// Thin wrapper — every existing "This is a prototype — … isn't wired up
+// yet" call site keeps working unchanged, as a neutral/default toast.
+function showHint(msg){ showToast(msg, {type:'default'}); }
 
 /* ---------------- Settings > General ---------------- */
 // Real local state (see settingsFields/settingsToggles in icons.js) — edits

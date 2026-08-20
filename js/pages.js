@@ -857,7 +857,7 @@ function pageSettingsGeneral(){
   const toggle = (key) => `<div class="toggle ${settingsToggles[key]?'on':'off'} clickable" onclick="toggleSetting(event,'${key}')"><span class="toggle-knob"></span></div>`;
   return `
   <div class="topbar">
-    <div class="topbar-row"><h1>General</h1><button class="btn btn-primary btn-clickable" onclick="showHint('Settings saved')">Save</button></div>
+    <div class="topbar-row"><h1>General</h1><button class="btn btn-primary btn-clickable" onclick="showToast('Settings saved', {type:'success', description:'Changes are stored for this session only.'})">Save</button></div>
   </div>
   <div class="scroll-body">
     <div class="field-group">
@@ -892,7 +892,7 @@ function pageSettingsInstitutions(){
   const toggle = (key) => `<div class="toggle ${settingsToggles[key]?'on':'off'} clickable" onclick="toggleSetting(event,'${key}')"><span class="toggle-knob"></span></div>`;
   return `
   <div class="topbar">
-    <div class="topbar-row"><h1>Institutions</h1><button class="btn btn-primary btn-clickable" onclick="showHint('Settings saved')">Save</button></div>
+    <div class="topbar-row"><h1>Institutions</h1><button class="btn btn-primary btn-clickable" onclick="showToast('Settings saved', {type:'success', description:'Changes are stored for this session only.'})">Save</button></div>
   </div>
   <div class="scroll-body">
     <div class="field-group">
@@ -999,12 +999,20 @@ function pageIntegrityReview(){
 function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
   opts = opts || {};
   // Row state drives surface: selected > unread (lighter than ground) > read.
-  const state = (opts.selected ? ' selected' : (opts.unread ? ' unread' : '')) + (opts.pinned ? ' pinned' : '');
-  // A live attempt is now called out by a badge on the row rather than by a
-  // section header, so the list can stay a single recency-ordered stream.
-  const right = opts.live
-    ? `<span class="live-badge">In-attempt</span>`
-    : `<span class="chat-item-time">${timeLabel}</span>`;
+  // closed/replied/filteredOut are independent overlay classes, not part of
+  // that priority chain — see css/inbox.css for what each one does visually.
+  const state = (opts.selected ? ' selected' : (opts.unread ? ' unread' : ''))
+    + (opts.pinned ? ' pinned' : '')
+    + (opts.closed ? ' closed' : '')
+    + (opts.replied ? ' replied' : '')
+    + (opts.filteredOut ? ' filtered-out' : '');
+  // Closed beats live beats a plain timestamp — a resolved ticket doesn't
+  // still look "in progress", even if the underlying attempt hasn't ended.
+  const right = opts.closed
+    ? `<span class="closed-badge">Closed</span>`
+    : opts.live
+      ? `<span class="live-badge">In-attempt</span>`
+      : `<span class="chat-item-time">${timeLabel}</span>`;
   return `<div class="chat-item${state}" role="button" tabindex="0" aria-current="${opts.selected?'true':'false'}"
     ${opts.convo?`data-convo="${opts.convo}"`:''}
     onclick="selectChatItem(event,this)" onkeydown="onChatItemKeydown(event)">
@@ -1019,11 +1027,16 @@ function inboxChatItem(role, roleLabel, timeLabel, preview, opts){
   </div>`;
 }
 
-/* Conversations with real backing data — everything selectChatItem() can
-   actually switch the chat window to. Everything else in the list still
-   marks read/selected on click but leaves the thread as-is (see the
-   "only a few conversations have live data" hint), same honesty convention
-   used everywhere else this session rather than faking a full 14-person roster. */
+/* Every row in the inbox list has a real backing entry here — selectChatItem()
+   can always switch the chat window to whatever's clicked, so the selected
+   row and the open conversation never disagree. The six "flagship" entries
+   below (welcome, jordan, aisha, maya, dana, ty) carry full detail: a real
+   multi-message thread, side-panel fields, sometimes an accordion. Every
+   other arrival (see INBOX_ARRIVALS/INBOX_TAIL_ARRIVALS further down) gets a
+   minimal entry auto-generated from its own row data — a one-message thread
+   using the exact text already shown in its preview, no fields, no
+   accordion. That's not faking a full roster; it's just also showing, once
+   opened, the one real thing we already know about that row. */
 const CONVERSATIONS = {
   welcome: {
     key:'welcome', name:'Integrity Console', role:'system', initials:'IC',
@@ -1113,35 +1126,55 @@ const CONVERSATIONS = {
 };
 // The inbox starts with only the pinned Welcome message — everything else
 // trickles in one at a time at randomized, realistic intervals (see
-// startInboxTrickle in app.js) rather than appearing all at once. The first
-// six carry real conversation data (data-convo); the rest are decorative,
-// same honesty convention as everywhere else this session.
-// unread:true isn't set per-entry — every arrival is forced unread at
-// insert time (see demoAddChatter in app.js), since a live inbox never
-// receives a conversation that's already "read".
+// startInboxTrickle in app.js) rather than appearing all at once. Every
+// entry uses its `key` as both the CONVERSATIONS lookup and the DOM
+// data-convo attribute — one identifier, not two fields that can drift out
+// of sync. The first six keys (jordan/aisha/maya/dana/ty, plus welcome
+// itself) are the flagship conversations defined above; every other key
+// gets a minimal CONVERSATIONS entry auto-generated below from this same
+// data, so opening it shows the one real message it already has instead of
+// silently doing nothing.
+// time:'now' is a sentinel — it tells demoAddChatter to stamp the row with a
+// real arrival time and keep its "_m ago" text accurate as real time passes,
+// starting from "Just now". A row with opts.live shows the "In-attempt"
+// badge instead of any time label, so it has no time field at all. The
+// "6 min left" row is a real exception to the sentinel: that's an
+// exam-timer countdown, not a message-age label, so it stays hand-typed.
 const INBOX_ARRIVALS = [
-  {role:'student', label:'Student', time:'&mdash;', preview:'I keep getting a black screen after The proctoring loads', opts:{live:true,convo:'aisha'}},
-  {role:'unknown', label:'Unknown', time:'&mdash;', preview:"Hi, I can't access my exam page", opts:{live:true,convo:'visitor'}},
-  {role:'student', label:'Student', time:'2m ago', preview:'The lockdown browser closed mid-exam. What do I do?', opts:{replied:true,convo:'jordan'}},
-  {role:'student', label:'Student', time:'4m ago', preview:'My camera permission keeps getting denied', opts:{convo:'maya'}},
-  {role:'admin', label:'Administrator', time:'7m ago', preview:'Is there a way to reschedule my exam time', opts:{convo:'dana'}},
-  {role:'student', label:'Student', time:'3m ago', preview:'The proctoring extension says it needs an update', opts:{replied:true,convo:'ty'}},
-  {role:'student', label:'Student', time:'6 min left', preview:'The lockdown browser closed mid-exam', opts:{replied:true}},
-  {role:'unknown', label:'Unknown', time:'8 min ago', preview:"Hi, I can't access my exam page", opts:{replied:true}},
-  {role:'admin', label:'Administrator', time:'6m ago', preview:'Thanks, that should resolve it &mdash; let me know', opts:{replied:true}},
-  {role:'student', label:'Student', time:'2m ago', preview:'I keep getting a black screen after The proctoring loads', opts:{replied:true}},
-  {role:'student', label:'Student', time:'2m ago', preview:'Screen recording permission keeps resetting', opts:{replied:true}},
-  {role:'unknown', label:'Unknown', time:'9m ago', preview:'My screen share stopped working mid-exam', opts:{}},
-  {role:'student', label:'Student', time:'2m ago', preview:"Extension update loop won't finish installing", opts:{replied:true}},
-  {role:'unknown', label:'Unknown', time:'18m ago', preview:'Do I need two monitors disconnected?', opts:{}},
+  {key:'aisha', role:'student', label:'Student', preview:'I keep getting a black screen after The proctoring loads', opts:{live:true}},
+  {key:'visitor', role:'unknown', label:'Unknown', preview:"Hi, I can't access my exam page", opts:{live:true}},
+  {key:'jordan', role:'student', label:'Student', time:'now', preview:'The lockdown browser closed mid-exam. What do I do?', opts:{}},
+  {key:'maya', role:'student', label:'Student', time:'now', preview:'My camera permission keeps getting denied', opts:{}},
+  {key:'dana', role:'admin', label:'Administrator', time:'now', preview:'Is there a way to reschedule my exam time', opts:{}},
+  {key:'ty', role:'student', label:'Student', time:'now', preview:'The proctoring extension says it needs an update', opts:{}},
+  {key:'filler-lockdown', role:'student', label:'Student', time:'6 min left', preview:'My lockdown browser keeps flashing a black screen every few minutes', opts:{}},
+  {key:'filler-verify', role:'unknown', label:'Unknown', time:'now', preview:"It's asking me to verify my identity again and I don't know why", opts:{}},
+  {key:'filler-instructor', role:'admin', label:'Administrator', time:'now', preview:"One of my instructors can't see a student's exam submission", opts:{}},
+  {key:'filler-screenrec', role:'student', label:'Student', time:'now', preview:'Screen recording permission keeps resetting', opts:{}},
+  {key:'filler-screenshare', role:'unknown', label:'Unknown', time:'now', preview:'My screen share stopped working mid-exam', opts:{}},
+  {key:'filler-extloop', role:'student', label:'Student', time:'now', preview:"Extension update loop won't finish installing", opts:{}},
+  {key:'filler-monitors', role:'unknown', label:'Unknown', time:'now', preview:'Do I need two monitors disconnected?', opts:{}},
+  {key:'filler-submit', role:'student', label:'Student', time:'now', preview:"The exam won't let me submit, it just spins", opts:{}},
 ];
 // A handful of extra late arrivals once the main list has finished trickling
 // in, so the inbox still feels "live" for a bit rather than just stopping.
 const INBOX_TAIL_ARRIVALS = [
-  {role:'student', label:'Student', time:'&mdash;', preview:'My exam timer looks wrong, is that normal?', opts:{live:true}},
-  {role:'unknown', label:'Unknown', time:'&mdash;', preview:"I got logged out mid-exam, what do I do?", opts:{live:true}},
-  {role:'admin', label:'Administrator', time:'&mdash;', preview:"Can I get a report of today's flagged sessions?", opts:{live:true}},
+  {key:'filler-timer', role:'student', label:'Student', preview:'My exam timer looks wrong, is that normal?', opts:{live:true}},
+  {key:'filler-loggedout', role:'unknown', label:'Unknown', preview:"I got logged out mid-exam, what do I do?", opts:{live:true}},
+  {key:'filler-report', role:'admin', label:'Administrator', preview:"Can I get a report of today's flagged sessions?", opts:{live:true}},
 ];
+// Auto-generate a minimal CONVERSATIONS entry for every arrival that isn't
+// one of the flagship conversations already defined above — a one-message
+// thread using the exact text already shown in the row's preview. This is
+// what makes every row in the list openable: selectChatItem() only has to
+// know that CONVERSATIONS[key] exists, never which keys are "real".
+[...INBOX_ARRIVALS, ...INBOX_TAIL_ARRIVALS].forEach(function(item){
+  if(CONVERSATIONS[item.key]) return;
+  CONVERSATIONS[item.key] = {
+    key:item.key, name:item.label, role:item.role, initials:item.label[0],
+    thread:[{mine:false, text:item.preview, time:'Just now'}],
+  };
+});
 function convoThreadHtml(conv){
   const rows = conv.thread.map(m => {
     if(m.mine) return `<div class="msg-row mine"><div class="msg-col mine"><div class="bubble mine">${m.text}</div><span class="msg-time">${m.time}</span></div></div>`;
@@ -1149,7 +1182,7 @@ function convoThreadHtml(conv){
     const bubbleClass = m.wide ? ' welcome-bubble' : '';
     return `<div class="msg-row"><div class="msg-avatar">${conv.initials}</div><div class="msg-col${colClass}"><div class="bubble${bubbleClass}">${m.text}</div><span class="msg-time">${m.time}</span></div></div>`;
   }).join('');
-  if(conv.role === 'system') return rows;
+  if(conv.role === 'system' || !conv.started) return rows;
   return `<div class="system-msg">Chat Started - ${conv.started}</div>${rows}`;
 }
 function convoAccordionsHtml(conv){
@@ -1203,12 +1236,61 @@ function jordanAccordionsHtml(){
           <div class="accordion-row"><strong>Access status</strong><span>Identity re-verification required before re-entry</span></div>
         </div>`;
 }
+// Renders one inboxRows entry against the CURRENT module state (activeConvo,
+// inboxStatusFilter) — the single function both pageInbox()'s full render
+// and any live DOM patch should go through, so a row never looks different
+// depending on which code path drew it.
+function inboxRowHtml(r){
+  const timeLabel = r.opts.live ? '' : (r.timeMode === 'fixed' ? r.fixedTime : relativeTimeLabel(Date.now() - r.activityAt));
+  const opts = Object.assign({}, r.opts, {
+    convo: r.key,
+    selected: activeConvo === r.key,
+    filteredOut: inboxRowFilteredOut(r),
+  });
+  return inboxChatItem(r.role, r.label, timeLabel, r.preview, opts);
+}
+function inboxRowFilteredOut(r){
+  if(inboxStatusFilter === 'open') return !!r.opts.closed;
+  if(inboxStatusFilter === 'closed') return !r.opts.closed;
+  return false; // all
+}
+// The one real list of commands — shared verbatim by the composer's inline
+// "!" dropdown and the ⌘K command palette modal, so there's exactly one
+// place that ever needs updating when a command changes.
+function commandListHtml(){
+  const item = (icon, name, shortcut, onclick, dataCmd, subtext) => `
+    <div class="command-item" ${dataCmd?`data-cmd="${dataCmd}"`:''} onclick="${onclick}">
+      <span class="command-item-left">
+        <span class="command-item-icon">${I(icon,13)}</span>
+        ${subtext
+          ? `<span class="command-item-text"><span class="name">${name}</span><span class="subtext">${subtext}</span></span>`
+          : `<span class="name">${name}</span>`}
+      </span>
+      <span class="command-trigger-key">${shortcut}</span>
+    </div>`;
+  return `
+    <div class="command-group-header">Diagnostics &amp; Utilities</div>
+    ${item('rotateCcw','Restart lockdown browser','!restart','useCommand(event)','restart')}
+    ${item('userCheck','Verify student ID','!verify-id','useCommand(event)','verifyid')}
+    ${item('smile','Insert greeting','!greeting','useCommand(event)','greeting')}
+    <div class="command-divider"></div>
+    <div class="command-group-header">Academic Remedies</div>
+    ${item('hourglass','Grant extra time','!extra-time','openModal(event)',null,'Requires approval &middot; writes to record')}
+    ${item('calClock','Reschedule exam','!reschedule','rescheduleCommand(event)',null,'Requires approval &middot; writes to record')}
+    ${item('flag','Escalate to administrator','!escalate','goToIntegrityReview(event)',null,'Requires approval &middot; writes to record')}
+  `;
+}
 function pageInbox(){
   const welcome = CONVERSATIONS.welcome;
   const listBody = `
         ${inboxChatItem(welcome.role, 'Welcome', welcome.started, 'This is a fully interactive front-end prototype &mdash; tap to read more.', {convo:'welcome', selected: activeConvo==='welcome', pinned:true})}
+        ${inboxSortedRows().map(inboxRowHtml).join('')}
   `;
   const activeConv = CONVERSATIONS[activeConvo] || welcome;
+  // The Welcome message is a system announcement, not a person — there's no
+  // real user context to show, so the panel (and its reopen affordance)
+  // aren't just collapsed, they're not applicable at all.
+  const isWelcomeActive = activeConv.key === 'welcome';
   const chatArea = `
     <div class="chat-window-wrap">
       <div class="chat-window">
@@ -1221,7 +1303,7 @@ function pageInbox(){
             </div>
           </div>
           <div class="chat-actions">
-            <button class="icon-btn-square panel-reopen${sidePanelCollapsed?' show':''}" data-panel-toggle
+            <button class="icon-btn-square panel-reopen${(sidePanelCollapsed && !isWelcomeActive)?' show':''}" data-panel-toggle
               aria-label="Show context panel" title="Show context panel"
               aria-expanded="${!sidePanelCollapsed}"
               onclick="toggleSidePanel(event)">${I('panelRightOpen',16)}</button>
@@ -1235,7 +1317,7 @@ function pageInbox(){
                 <button class="chat-more-item" onclick="chatMoreAction(event,'spam')">${I('alertCircle',15)}Mark as spam</button>
               </div>
             </div>
-            <button class="btn btn-primary btn-deep" style="padding:8px 12px;gap:4px;">${I('x',16)} Close</button>
+            <button class="btn btn-primary btn-deep btn-clickable" style="padding:8px 12px;gap:4px;" onclick="closeActiveConversation(event)">${I('x',16)} Close</button>
           </div>
         </div>
         <div class="chat-thread">
@@ -1266,27 +1348,32 @@ function pageInbox(){
           </div>
         </div>
         <div id="command-menu" class="command-menu">
-          <div class="command-trigger"><span class="bang">!</span> Commands &middot; type to filter</div>
-          <div class="command-list">
-            <div class="command-group-header">Diagnostics &amp; Utilities</div>
-            <div class="command-item" data-cmd="restart" onclick="useCommand(event)"><span class="name">Restart lockdown browser</span><span class="command-trigger-key">!restart</span></div>
-            <div class="command-item" data-cmd="verifyid" onclick="useCommand(event)"><span class="name">Verify student ID</span><span class="command-trigger-key">!verify-id</span></div>
-            <div class="command-item" data-cmd="greeting" onclick="useCommand(event)"><span class="name">Insert greeting</span><span class="command-trigger-key">!greeting</span></div>
-            <div class="command-divider"></div>
-            <div class="command-group-header">Academic Remedies</div>
-            <div class="command-item" onclick="openModal(event)">
-              <span><span class="name">Grant extra time</span><span class="subtext">Requires approval &middot; writes to record</span></span>
-              <span class="command-trigger-key">!extra-time</span></div>
-            <div class="command-item" onclick="closeCommandMenu()">
-              <span><span class="name">Reschedule exam</span><span class="subtext">Requires approval &middot; writes to record</span></span>
-              <span class="command-trigger-key">!reschedule</span></div>
-            <div class="command-item" onclick="goToIntegrityReview(event)">
-              <span><span class="name">Escalate to administrator</span><span class="subtext">Requires approval &middot; writes to record</span></span>
-              <span class="command-trigger-key">!escalate</span></div>
+          <div class="command-trigger"><span class="bang">!</span> Commands &middot; type to filter
+            <span class="command-trigger-key" style="margin-left:auto;">&#8984;K</span></div>
+          <div class="command-list">${commandListHtml()}</div>
+        </div>
+        <div id="command-backdrop" class="backdrop" onclick="closeCommandModal()"></div>
+        <div id="command-modal" class="modal command-palette">
+          <div class="command-palette-search">
+            ${I('search',16)}
+            <input id="command-modal-search" type="text" placeholder="Type a command or search…"
+              oninput="onCommandModalSearchInput(event)" onkeydown="onCommandModalSearchKeydown(event)">
+            <span class="command-trigger-key">Esc</span>
+          </div>
+          <div class="command-list">${commandListHtml()}</div>
+          <div class="command-palette-footer">
+            <span class="command-trigger-key">&#8593;</span><span class="command-trigger-key">&#8595;</span>
+            <span class="command-palette-footer-label">Navigate</span>
+            <span class="command-palette-divider">&middot;</span>
+            <span class="command-trigger-key">&#8629;</span>
+            <span class="command-palette-footer-label">Select</span>
+            <span class="command-palette-footer-spacer"></span>
+            <span class="command-trigger-key">&#8984;K</span>
+            <span class="command-palette-footer-label">Toggle</span>
           </div>
         </div>
       </div>
-      <div class="side-panel${sidePanelCollapsed?' collapsed':''}" aria-hidden="${sidePanelCollapsed}">
+      <div class="side-panel${sidePanelCollapsed?' collapsed':''}${isWelcomeActive?' hidden':''}" aria-hidden="${sidePanelCollapsed || isWelcomeActive}">
         <div class="side-tabs">
           <div class="side-tabs-left">
             <button class="side-tab active" onclick="selectSideTab(event,'user')">User</button>
@@ -1324,19 +1411,19 @@ function pageInbox(){
       <div id="views-popover" class="views-popover">
         <div class="views-popover-header">Inbox</div>
         <div class="views-list">
-          <div class="view-item active" onclick="selectView(event,'your-inbox')">
-            ${I('inbox',16)}Your Inbox <span class="view-count">0</span>
+          <div class="view-item active" data-view="your-inbox" onclick="selectView(event,'your-inbox')">
+            ${I('inbox',16)}Your Inbox <span class="view-count">${inboxOpenCount()}</span>
           </div>
-          <div class="view-item" onclick="selectView(event,'mentions')">
+          <div class="view-item" data-view="mentions" onclick="selectView(event,'mentions')">
             ${I('user',16)}Mentions <span class="view-count">0</span>
           </div>
-          <div class="view-item" onclick="selectView(event,'all')">
-            ${I('inbox',16)}All <span class="view-count">0</span>
+          <div class="view-item" data-view="all" onclick="selectView(event,'all')">
+            ${I('inbox',16)}All <span class="view-count">${inboxRows.length}</span>
           </div>
-          <div class="view-item" onclick="selectView(event,'unassigned')">
-            ${I('inbox',16)}Unassigned <span class="view-count">0</span>
+          <div class="view-item" data-view="unassigned" onclick="selectView(event,'unassigned')">
+            ${I('inbox',16)}Unassigned <span class="view-count">${inboxOpenCount()}</span>
           </div>
-          <div class="view-item" onclick="selectView(event,'spam')">
+          <div class="view-item" data-view="spam" onclick="selectView(event,'spam')">
             ${I('alertCircle',16)}Spam <span class="view-count">0</span>
           </div>
         </div>
@@ -1344,7 +1431,7 @@ function pageInbox(){
       <div class="convo-filters">
         <div class="filter-tab-wrap">
           <button class="filter-tab" data-role="filter" onclick="toggleFilterMenu(event)">
-            <span class="filter-tab-label">${FILTER_LABELS[inboxStatusFilter]}</span>${I('chevronDown',12)}
+            <span class="filter-tab-label">${computeFilterLabel(inboxStatusFilter)}</span>${I('chevronDown',12)}
           </button>
           <div id="filter-menu" class="filter-menu">
             <button class="menu-check-item${inboxStatusFilter==='open'?' active':''}" onclick="selectFilter(event,'open')">${I('inbox',15)}Open<span class="check">${I('check',14)}</span></button>
