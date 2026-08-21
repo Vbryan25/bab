@@ -43,8 +43,21 @@ function rowFromArrival(item: ArrivalItem): InboxRowState {
   }
 }
 
-export function useInbox() {
-  const [rows, setRows] = useState<InboxRowState[]>([])
+/**
+ * @param trickle  Conversations normally arrive one at a time on a timer, which
+ *   is right for the live page and wrong anywhere the inbox is being looked at
+ *   rather than used — a story or a screenshot opens on an all-but-empty queue
+ *   and fills over the next half minute. Pass `false` to seed the same rows
+ *   synchronously instead.
+ */
+export function useInbox({ trickle = true }: { trickle?: boolean } = {}) {
+  const [rows, setRows] = useState<InboxRowState[]>(() =>
+    trickle
+      ? []
+      : // The trickle prepends each arrival, so the settled order is the queue
+        // reversed. Match it, or the seeded list sorts differently.
+        [...INBOX_ARRIVALS, ...INBOX_TAIL_ARRIVALS].map(rowFromArrival).reverse()
+  )
   const [activeConvo, setActiveConvo] = useState("welcome")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open")
   const [sortBy, setSortBy] = useState<SortBy>("last-activity")
@@ -65,6 +78,8 @@ export function useInbox() {
   // conversation arrives one at a time on a randomized timer, same idea as
   // the prototype's startInboxTrickle/demoAddChatter.
   useEffect(() => {
+    if (!trickle) return
+
     const queue = [...INBOX_ARRIVALS, ...INBOX_TAIL_ARRIVALS]
     let i = 0
     function next() {
